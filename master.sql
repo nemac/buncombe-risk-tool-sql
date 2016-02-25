@@ -1,9 +1,21 @@
 -----CLEAN PROPERTY AND BUILDING DATA---------
-update property
+UPDATE property_v2
+  SET geom=ST_Multi(ST_CollectionExtract(ST_MakeValid(geom), 3))
+  WHERE NOT ST_IsValid(geom);
+
+update property_v2
 set geom = ST_MakeValid(geom)
 
-UPDATE buildings
-SET geom = ST_MakeValid(geom); 
+create or replace view vw_valid_geoms as
+SELECT 
+  g.geom, 
+  row_number() over() AS gid
+FROM 
+  (SELECT 
+     (ST_DUMP(ST_MakeValid (geom))).geom FROM property_v2
+  ) AS g
+WHERE ST_GeometryType(g.geom) = 'ST_MultiPolygon' 
+   OR ST_GeometryType(g.geom) = 'ST_Polygon';
 
 
 ---JOIN BUILDING FOOTPRINTS TO PARCEL DATA AND CREATE NEW TABLE-------------------------
