@@ -1,5 +1,15 @@
-create or replace view vw_residential_properties as 
-select * from property_class_4326 where 
+DELETE from property_v3 where 
+OWNER = 'DAVID Z TILLER TRUST LESLIE M TILLER TRUST' 
+or OWNER = 'SMITH WALTER'
+or Owner = 'SMITH ALEXANDER'
+or Owner = 'LAMBE DONALD;LAMBE SANDRA'
+or owner = 'SHASALELL COMPANY'
+or owner = 'RYMER JUNE'
+or owner = 'BYRNE WILLIAM;BYRNE UTE'
+or owner = 'KRUGMAN TERRY';
+
+create table residential_properties as 
+select * from property_v3 where 
 class = '100'
 or class = '105'
 or class = '120'
@@ -7,10 +17,11 @@ or class = '121'
 or class = '122' 
 or class = '170'
 or class = '180'
-or class = '411'
 or class = '300'
 or class = '311'
-or class = '416'; 
+or class = '411'
+or class = '416'
+order by class desc;
 
 create or replace view vw_non_bc_residents as
 select * from vw_residential_properties 
@@ -56,3 +67,7 @@ select * from vw_residential_properties;
 delete from vw_non_owner 
 where streetname LIKE concat('%',address,'%') or 
 address LIKE concat('%',streetname,'%')
+
+create or replace view vw_non_nc_ownders as 
+select * from vw_residential_properties
+where state != 'NC'
