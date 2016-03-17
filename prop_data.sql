@@ -18,7 +18,7 @@ create table tax_res_section(pinnum character varying(50), bldg_num numeric, sec
 
 create table tax_sales_master(pinnum character varying(50),sell_date character varying(50),sell_no character varying(50),
 plat_book character varying(50),plat_page  character varying(50),deed_book  character varying(50),deed_page character varying(50),
-deed_date  character varying(50),deed_inst  character varying(50) ,selling_price numeric ,qualified_sale numeric ,
+deed_date  character varying(50),deed_inst  character varying(50) ,selling_price numeric ,qualified_sale character varying(50),
 vacant_lot  character varying(50),disqual_code  character varying(50),seller_1_id  character varying(50)
 ,seller_2_id character varying(50),buyer_1_id  character varying(50),buyer_2_id  character varying(50));
 
