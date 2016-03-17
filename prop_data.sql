@@ -22,3 +22,18 @@ deed_date  character varying(50),deed_inst  character varying(50) ,selling_price
 vacant_lot  character varying(50),disqual_code  character varying(50),seller_1_id  character varying(50)
 ,seller_2_id character varying(50),buyer_1_id  character varying(50),buyer_2_id  character varying(50));
 
+
+update tax_com_section set pinnum = REPLACE(LTRIM(REPLACE(pinnum, '0', ' ')), ' ', '0');
+
+update tax_com_refinement set pinnum = REPLACE(LTRIM(REPLACE(pinnum, '0', ' ')), ' ', '0');
+
+update tax_com_section set pinnum = REPLACE(LTRIM(REPLACE(pinnum, '0', ' ')), ' ', '0');
+
+update tax_res_building set pinnum = REPLACE(LTRIM(REPLACE(pinnum, '0', ' ')), ' ', '0');
+
+update tax_res_section set pinnum = REPLACE(LTRIM(REPLACE(pinnum, '0', ' ')), ' ', '0');
+
+update tax_sales_master set pinnum = REPLACE(LTRIM(REPLACE(pinnum, '0', ' ')), ' ', '0');
+
+
+
