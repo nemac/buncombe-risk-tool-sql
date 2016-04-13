@@ -465,3 +465,20 @@ sum(buildingva) as bv,
 sum(landvalue) as lv,
 count(*) as parcels
 from build_debrflow;
+
+
+----------------------------------------This is the start of the building classification vulnerability queries--------------
+create or replace view fl5yr_building_exposure as 
+Select pinnum as pinnum,
+sum(appraisedv) as ap,
+sum(buildingva) as bv,
+sum(landvalue) as lv,
+count(*) as parcels
+from building_footprints as p
+join fl5yr as f
+on ST_Intersects(p.geom, f.geom)
+group by pinnum;
+
+
+
+ 
