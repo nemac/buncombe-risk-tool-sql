@@ -499,16 +499,15 @@ from property as p
 inner join buildingsls on p.pinnum = buildingsls.pinnum; 
 
 
-alter table property add column building_fl1 "text" 
-alter table property add column building_fl5 "text" 
-alter table property add column building_ls "text" 
+alter table property add column building_fl1 "text";
+alter table property add column building_fl5 "text";
+alter table property add column building_ls "text";
 
 update property set building_fl1 = 
 CASE WHEN EXISTS 
 (SELECT * FROM property_buildingfl1 as a
-WHERE  a.pinnum = b.pinnum ) 
-THEN 'yes' ELSE 'no'
-end from property as b
+WHERE  a.pinnum = property.pinnum ) 
+THEN 1 ELSE 0 END;
 
 update property set building_fl5 = 
 CASE WHEN EXISTS 
@@ -524,6 +523,3 @@ WHERE  a.pinnum = b.pinnum )
 THEN 'yes' ELSE 'no'
 end from property as b
      
-
-
- 
