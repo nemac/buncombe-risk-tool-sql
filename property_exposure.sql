@@ -1,3 +1,34 @@
+CREATE table wf_results as
+WITH 
+-- our features of interest
+   feat AS (SELECT pinnum As parcel_id, geom FROM property AS b 
+    WHERE (PIN > '0')) ,
+-- clip band of raster tiles to boundaries of builds
+-- then get stats for these clipped regions
+ b_stats AS
+	(SELECT  parcel_id, (stats).*
+FROM (SELECT parcel_id, (ST_SummaryStats(ST_Clip(rast,1,geom,NULL,true),TRUE)) As stats
+    FROM wildfire
+		INNER JOIN feat
+	ON ST_Intersects(feat.geom, rast) 
+ ) As foo
+ )
+-- finally summarize stats
+SELECT parcel_id, SUM(count) As num_pixels
+  , MIN(min) As min_pval
+  ,  MAX((CASE
+	WHEN max >= 78 THEN 'High Risk'
+	WHEN max >= 67 and max < 78   THEN 'Medium High Risk'
+	WHEN max >= 33 and max < 67 THEN 'Medium'
+	ELSE 'Low Risk'
+	END)) As max_pval
+  , SUM(mean*count)/SUM(count) As avg_pval
+	FROM b_stats
+ WHERE count > 0
+	GROUP BY parcel_id
+	ORDER BY max_pval;
+
+
 ---CREATE 100 YEAR FLOODPLAIN VIEW-------------------
 create or replace view fl1yr_exposure as 
 Select pinnum as pinnum,
