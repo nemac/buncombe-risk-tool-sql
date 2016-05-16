@@ -71,3 +71,17 @@ address LIKE concat('%',streetname,'%')
 create or replace view vw_non_nc_ownders as 
 select * from vw_residential_properties
 where state != 'NC'
+
+
+alter table building_footprints 
+add column sqft double precision
+
+
+update building_footprints as a
+set sqft = b.sqft 
+from sqft_building_v2 as b
+where a.pinnum = b.pinnum
+
+create or replace view sqft_building_v2 as
+select pinnum, st_area(geom::geography)/power(.3048,2) as sqft, geom from building_footprints
+
