@@ -146,6 +146,40 @@ building_elevator = elevator
 from tax_res_building
 where building_footprints.pinnum = tax_res_building.pinnum;
 
+create table building_val_sqft as 
+select gid, pinnum, acreage, class, 
+totalmarke, landvalue, buildingva, 
+building_c,  buildin_07, 
+buildin_01, buildin_08, geom
+from building_footprints
 
+alter table building_val_sqft
+add column sqft numeric
+
+update building_val_sqft as a
+set sqft = b.buildin_08::numeric
+from building_footprints as b
+where a.pinnum = b.pinnum
+
+
+alter table property_4326
+drop column sqft
+
+alter table property_4326
+add column sqft numeric
+
+drop view build_sqft_group_pinnum
+
+create or replace view build_sqft_group_pinnum as
+select pinnum, sum(sqft) from building_val_sqft
+group by pinnum
+
+update property_4326 as a 
+set sqft = b.sum
+from build_sqft_group_pinnum as b
+where a.pinnum = b.pinnum
+
+create or replace view parcel_val_sqft as 
+select pinnum,class,acreage, totalmarke, landvalue, buildingva, sqft, geom from property_4326
 
 
