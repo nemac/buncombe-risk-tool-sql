@@ -85,3 +85,21 @@ where a.pinnum = b.pinnum
 create or replace view sqft_building_v2 as
 select pinnum, st_area(geom::geography)/power(.3048,2) as sqft, geom from building_footprints
 
+create table parcel_type as
+select gid, pinnum, (CASE WHEN class >= '100' AND class < '200' THEN 'Residential'
+WHEN class = '411' THEN 'Residential'
+WHEN class = '416' THEN 'Residential'
+WHEN class = '635' THEN 'Residential'
+WHEN class = '250' THEN 'Biltmore Estate'
+WHEN class >= '300' AND class < '400' THEN 'Vacant Land'
+WHEN class >= '400' AND class < '411' THEN 'Commercial'
+WHEN class >= '412' AND class < '416' THEN 'Commercial'
+WHEN class >= '417' AND class < '500' THEN 'Commercial'
+WHEN class >= '500' AND class < '600' THEN 'Recreation'
+WHEN class >= '600' AND class < '635' THEN 'Community Services'
+WHEN class >= '636' AND class < '700' THEN 'Community Services'
+WHEN class >= '700' AND class < '800' THEN 'Industrial'
+WHEN class >= '800' AND class < '900' THEN 'State Assessed/Utilities'
+WHEN class >= '900' AND class < '1000' THEN 'Conserved Area/Park'
+ELSE 'Unclassified' END) as type 
+from property_4326
