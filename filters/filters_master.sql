@@ -114,3 +114,19 @@ select gid, pinnum,
         END) AS ownership, 
         geom
 from property_4326
+
+create table ownership_residential as 
+select gid, pinnum, class,
+(CASE
+            WHEN ((((property_4326.housenumbe::text || ' '::text) || property_4326.streetname::text) || ' '::text) || property_4326.streettype::text) = property_4326.address::text THEN 'owner_residence'::text
+            WHEN property_4326.state::text <> 'NC'::text THEN 'out_of_state'::text
+            WHEN property_4326.zipcode::text = ANY ('{28806,28804,28801,28778,28748,28715,28803,28704,28732,28730,28711,28709,28787,28805,28701}'::text[]) THEN 'in_county'::text
+            ELSE 'in_state'::text
+        END) AS ownership, 
+        geom
+from property_4326
+where
+class >= '100' and class < '200' 
+or class = '416' 
+or class = '411'
+or class = '635' 
