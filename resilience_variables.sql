@@ -539,6 +539,16 @@ or class = '416'
 or class = '411'
 or class = '635';
 
+create or replace view landval_nrm as
+select a.pinnum, (case when landvalue = null or acreage = 0 then null 
+	else a.landvalue / a.acreage end) as landval_nrm 
+	 from property_4326 as a
+
+create or replace view bldvalue_nrm as 
+select a.pinnum, (case when buildingva = null or sqft = 0 then null
+		  else a.buildingva / a.sqft end) as bldvalue_nrm
+		  from building_val_sqft
+
 
 update resilience_variables as a
 set blockce10  =  b.blockce10
