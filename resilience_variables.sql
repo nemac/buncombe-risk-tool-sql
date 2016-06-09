@@ -585,4 +585,39 @@ or class = '416'
 or class = '411'
 or class = '635' 
 
+create or replace view par_fl1yr_yn as 
+select a.pin, (case when a.pin = b.pin then 'yes' else 
+null end) as yes_no from par_fl1yr_yn_v2 as a, parcels_fl1yr_tab as b 
+where a.pin= b.pin
+
+create or replace view par_fl5yr_yn as 
+select a.pin, (case when a.pin = b.pin then 'yes' else 
+null end) as yes_no from par_fl5yr_yn_v2 as a, parcels_fl1yr_tab as b 
+where a.pin= b.pin  
+
+alter table resilience_variables
+add column pinnum character varying(50),
+add column cblock numeric, 
+add column ctract text,
+add column totalmarke numeric(10,0),
+add column appraisedv numeric(10,0),
+add column taxvalue numeric(10,0),
+add column buildingva numeric(10,0),
+add column tractce character varying(6),
+add column blockce10 character varying(4),
+add column blkgrpce character varying(1),
+add column par_fl1yr_yn text,
+add column par_fl5yr_yn text,
+add column acreage numeric, 
+add column ownership text,
+add column exposure_levels text,
+add column adcap_levels text,
+add column vuln_levels text,
+add column parcel_type text, 
+add column year numeric, 
+add column class character varying(10),
+add column sqft numeric,
+add column build_par_flqyr_yn text,
+add column build_par_fl5yr_yn text;
+
 
