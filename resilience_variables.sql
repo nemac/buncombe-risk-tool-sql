@@ -672,3 +672,9 @@ update resilience_variables as a
 set bldvalue_nrm =  b.bldvalue_nrm 
 from bldvalue_nrm as b
 where a.pinnum = b.pinnum;
+
+update resilience_variables as a
+set parcel_type  =  b.type
+from parcel_type as b
+where a.pinnum = b.pinnum;
+ 
