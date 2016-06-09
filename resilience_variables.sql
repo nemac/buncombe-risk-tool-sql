@@ -563,9 +563,9 @@ from census_parcel as b
 where a.pinnum = b.pinnum;
 
 update resilience_variables as a
-set ctract  =  b.tractce10 
+set tractce  =  b.tractce10
 from census_parcel as b
-where a.pinnum = b.pinnum;
+where a.pinnum = b.pinnum; 
 
 update resilience_variables as a
 set totalmarke =  b.totalmarke
@@ -576,7 +576,6 @@ update resilience_variables as a
 set appraisedv =  b.appraisedv 
 from property_4326 as b
 where a.pinnum = b.pinnum;
-
 
 update resilience_variables as a
 set taxvalue  =  b.taxvalue 
