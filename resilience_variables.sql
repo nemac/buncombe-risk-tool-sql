@@ -605,8 +605,6 @@ where a.pin= b.pin
 
 alter table resilience_variables
 add column pinnum character varying(50),
-add column cblock numeric, 
-add column ctract text,
 add column totalmarke numeric(10,0),
 add column appraisedv numeric(10,0),
 add column taxvalue numeric(10,0),
@@ -614,15 +612,72 @@ add column buildingva numeric(10,0),
 add column tractce character varying(6),
 add column blockce10 character varying(4),
 add column blkgrpce character varying(1),
-add column par_fl1yr_yn text,
-add column par_fl5yr_yn text,
+add column blockgroup_geoid10 text;
 add column acreage numeric, 
 add column ownership text,
-add column exposure_levels text,
-add column adcap_levels text,
-add column vuln_levels text,
 add column parcel_type text, 
+add column exposure_levels1 text,
+add column adcap_levels1 text,
+add column vuln_levels1 text,
 add column exposure_levels5 text,
+
+594
+595
+596
+597
+598
+599
+600
+601
+602
+603
+604
+605
+606
+607
+608
+609
+610
+611
+612
+613
+614
+615
+616
+617
+618
+619
+620
+621
+622
+623
+or class = '635' 
+create or replace view par_fl1yr_yn as 
+select a.pin, (case when a.pin = b.pin then 'yes' else 
+null end) as yes_no from par_fl1yr_yn_v2 as a, parcels_fl1yr_tab as b 
+where a.pin= b.pin
+create or replace view par_fl5yr_yn as 
+select a.pin, (case when a.pin = b.pin then 'yes' else 
+null end) as yes_no from par_fl5yr_yn_v2 as a, parcels_fl5yr_tab as b 
+where a.pin= b.pin  
+alter table resilience_variables
+add column pinnum character varying(50),
+add column totalmarke numeric(10,0),
+add column appraisedv numeric(10,0),
+add column taxvalue numeric(10,0),
+add column buildingva numeric(10,0),
+add column tractce character varying(6),
+add column blockce10 character varying(4),
+add column blkgrpce character varying(1),
+add column blockgroup_geoid10 text;
+add column acreage numeric, 
+add column ownership text,
+add column parcel_type text, 
+add column exposure_levels1 text,
+add column adcap_levels1 text,
+add column vuln_levels1 text,
+add column exposure_levels5 text,
+
 add column adcap_levels5 text,
 add column vuln_levels5 text,
 add column exposure_levels_ls text,
@@ -631,9 +686,10 @@ add column vuln_levels_ls text,
 add column year numeric, 
 add column class character varying(10),
 add column sqft numeric,
+add column par_fl1yr_yn text,
+add column par_fl5yr_yn text,
 add column build_par_flqyr_yn text,
-add column build_par_fl5yr_yn text,
-add column blockgroup_geoid10 text;
+add column build_par_fl5yr_yn text;
 
 alter table resilience_variables
 add column adcap_levels5
@@ -691,19 +747,18 @@ update resilience_variables as a
 set  ownership =  b.ownership
 from ownership as b
 where a.pinnum = b.pinnum;
-
 update resilience_variables as a
-set exposure_levels  =  b.exposure_levels 
+set exposure_levels1  =  b.exposure_levels 
 from parcels_fl1yr_tab as b
 where a.pinnum = b.pin;
 
 update resilience_variables as a
-set adcap_levels  =  b.adcap_levels
+set adcap_levels1  =  b.adcap_levels
 from parcels_fl1yr_tab as b
 where a.pinnum = b.pin;
 
 update resilience_variables as a
-set vuln_levels  =  b.vuln_levels 
+set vuln_levels1  =  b.vuln_levels 
 from parcels_fl1yr_tab as b
 where a.pinnum = b.pin;
 
