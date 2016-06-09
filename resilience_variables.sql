@@ -278,25 +278,13 @@ select a.pin, (case when a.pin = b.pin then 'yes' else
 null end) as yes_no from build_ls_tab as a, parcels_ls_tab as b 
 where a.pin= b.pin
 
-alter table parcels_fl5yr_tab 
-add column bldg_ls_yn text,
-add column year_built numeric;
+alter table parcels_ls_tab 
+add column bldg_ls_yn text;
+update parcels_ls_tab as a 
 
-update parcels_ls_tab as a
-set year_built = b.year_built 
-from year_built_com as b 
-where a.pin = b.pinnum;
-
-update parcels_ls_tab as a
-set year_built = b.year_built 
-from year_built_res as b 
-where a.pin = b.pinnum; 
-
-update parcels_fl5yr_tab as a 
 set bldg_ls_yn = b.yes_no 
 from build_par_ls_yn as b
 where a.pin = b.pin;
-
 
 --------Begin the creation of the vulerability ranks of 1-9 given the exposure and adaptive capcity metrics-------------
 
@@ -547,6 +535,7 @@ THEN 'yes' ELSE 'no'
 end from property as b
 
 
+
 create table parcel_type as
 select gid, pinnum, (CASE WHEN class >= '100' AND class < '200' THEN 'Residential'
 WHEN class = '411' THEN 'Residential'
@@ -592,6 +581,7 @@ class >= '100' and class < '200'
 or class = '416' 
 or class = '411'
 or class = '635' 
+
 create or replace view par_fl1yr_yn as 
 select a.pin, (case when a.pin = b.pin then 'yes' else 
 null end) as yes_no from par_fl1yr_yn_v2 as a, parcels_fl1yr_tab as b 
