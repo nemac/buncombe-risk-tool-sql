@@ -63,8 +63,9 @@ add column class character varying(10),
 add column sqft numeric,
 add column par_fl1yr_yn text,
 add column par_fl5yr_yn text,
-add column build_par_flqyr_yn text,
-add column build_par_fl5yr_yn text,
+add column bldg_fl1yr_yn text,
+add column bldg_fl5yr_yn text,
+add column bldg_ls_yn text,
 add column landval_nrm numeric,
 add column bldvalue_nrm numeric;
 
@@ -678,4 +679,18 @@ update resilience_variables as a
 set parcel_type  =  b.type
 from parcel_type as b
 where a.pinnum = b.pinnum;
- 
+
+update resilience_variables as a 
+set bldg_fl1yr_yn = b.bldg_fl1yr_yn 
+from parcels_fl1yr_tab as b
+where a.pinnum = b.pin 
+
+update resilience_variables as a 
+set bldg_fl5yr_yn = b.bldg_fl5yr_yn 
+from parcels_fl5yr_tab as b
+where a.pinnum = b.pin 
+
+update resilience_variables as a 
+set bldg_ls_yn = b.bldg_ls_yn 
+from parcels_ls_tab as b
+where a.pinnum = b.pin 
