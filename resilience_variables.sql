@@ -584,7 +584,6 @@ class >= '100' and class < '200'
 or class = '416' 
 or class = '411'
 or class = '635' 
-
 create or replace view par_fl1yr_yn as 
 select a.pin, (case when a.pin = b.pin then 'yes' else 
 null end) as yes_no from par_fl1yr_yn_v2 as a, parcels_fl1yr_tab as b 
@@ -592,7 +591,7 @@ where a.pin= b.pin
 
 create or replace view par_fl5yr_yn as 
 select a.pin, (case when a.pin = b.pin then 'yes' else 
-null end) as yes_no from par_fl5yr_yn_v2 as a, parcels_fl1yr_tab as b 
+null end) as yes_no from par_fl5yr_yn_v2 as a, parcels_fl5yr_tab as b 
 where a.pin= b.pin  
 
 alter table resilience_variables
@@ -618,6 +617,107 @@ add column year numeric,
 add column class character varying(10),
 add column sqft numeric,
 add column build_par_flqyr_yn text,
-add column build_par_fl5yr_yn text;
+add column build_par_fl5yr_yn text,
+add column blockgroup_geoid10 text;
 
+alter table resilience_variables
+add column adcap_levels5
+add column vuln_levels5,
+add column parcel_type5; 
 
+update resilience_variables as a
+set blockce10  =  b.blockce10
+from census_parcel as b
+where a.pinnum = b.pinnum;
+
+update resilience_variables as a
+set blockgroup_geoid10  =  b.blockgroup_geoid10
+from census_parcel as b
+where a.pinnum = b.pinnum;
+
+update resilience_variables as a
+set ctract  =  b.tractce10 
+from census_parcel as b
+where a.pinnum = b.pinnum;
+
+update resilience_variables as a
+set totalmarke =  b.totalmarke
+from property_4326 as b
+where a.pinnum = b.pinnum;
+
+update resilience_variables as a
+set appraisedv =  b.appraisedv 
+from property_4326 as b
+where a.pinnum = b.pinnum;
+
+update resilience_variables as a
+set taxvalue  =  b.taxvalue 
+from property_4326 as b
+where a.pinnum = b.pinnum;
+
+update resilience_variables as a
+set acreage  =  b.taxvalue 
+from property_4326 as b
+where a.pinnum = b.pinnum;
+
+--12370 what is classed?
+
+update resilience_variables as a
+set class=  b.class
+from property_4326 as b
+where a.pinnum = b.pinnum;
+
+update resilience_variables as a
+set par_fl1yr_yn  =  b.yes_no
+from par_fl1yr_yn as b
+where a.pinnum = b.pin;
+
+update resilience_variables as a
+set  ownership =  b.ownership
+from ownership as b
+where a.pinnum = b.pinnum;
+
+update resilience_variables as a
+set exposure_levels  =  b.exposure_levels 
+from parcels_fl1yr_tab as b
+where a.pinnum = b.pinnum;
+
+update resilience_variables as a
+set adcap_levels5  =  b.adcap_levels
+from adcap_levels as b
+where a.pinnum = b.pin;
+
+update resilience_variables as a
+set exposure_levels5  =  b.exposure_levels 
+from parcels_fl5yr_tab as b
+where a.pinnum = b.pin;
+
+update resilience_variables as a
+set vuln_levels5  =  b.vuln_levels 
+from parcels_fl5yr_tab as b
+where a.pinnum = b.pin;
+
+update resilience_variables as a
+set adcap_levels5  =  b.adcap_levels
+from parcels_fl5yr_tab as b
+where a.pinnum = b.pin;
+
+update resilience_variables as a
+set year  =  b.year_built
+from parcels_fl5yr_tab as b
+where a.pinnum = b.pin;
+
+update resilience_variables as a
+set adcap_levels5  =  b.adcap_levels
+from parcels_fl5yr_tab as b
+where a.pinnum = b.pin;
+
+update resilience_variables as a
+set year  =  b.year
+from as b
+where a.pinnum = b.pinnum;
+
+update resilience_variables as a
+set sqft =  b.sum 
+from build_sqft_group_pinnum as b
+where a.pinnum = b.pinnum;
