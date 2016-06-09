@@ -604,6 +604,7 @@ update resilience_variables as a
 set  ownership =  b.ownership
 from ownership as b
 where a.pinnum = b.pinnum;
+
 update resilience_variables as a
 set exposure_levels1  =  b.exposure_levels 
 from parcels_fl1yr_tab as b
