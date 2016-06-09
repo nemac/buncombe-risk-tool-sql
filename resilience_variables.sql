@@ -301,6 +301,11 @@ where a.pin = b.pin;
 
 
 -----Parcels within the 100 year floodplain exposure, adaptive apacity and vulnerability metric------------------
+
+--------Begin the creation of the vulerability ranks of 1-9 given the exposure and adaptive capcity metrics-------------
+
+
+-----Parcels within the 100 year floodplain exposure, adaptive apacity and vulnerability metric------------------
 alter table parcels_fl1yr_tab 
 add column exposure_levels text,
 add column adcap_levels text,
@@ -310,10 +315,22 @@ create or replace view fl1yr_exposure as
 select a.pin, 
 (case
 when bldg_fl1yr_yn is null then 'Low'
-when bldg_fl1yr_yn = 'yes' and class != '170' and class != '416' and class != '411' then 'Med' 
+when bldg_fl1yr_yn = 'yes' 
+and class != '170' 
+and class != '416' 
+and class != '411' 
+and class != '180'
+then 'Med' 
 else 'High' 
 END) as exposure_levels,
-a.geom from parcels_fl1yr_tab as a;
+a.geom from parcels_fl1yr_tab as a
+where 
+class = '100' 
+or class < '200' 
+or class = '411'
+or class = '416' 
+or class = '635';
+
 
 update parcels_fl1yr_tab as a
 set exposure_levels = b.exposure_levels 
@@ -361,14 +378,26 @@ add column exposure_levels text,
 add column adcap_levels text,
 add column vuln_levels text;
 
+
 create or replace view fl5yr_exposure as 
-select a.pin, 
+select a.pin, a.class,
 (case
 when bldg_fl5yr_yn is null then 'Low'
-when bldg_fl5yr_yn = 'yes' and class != '170' and class != '416' and class != '411' then 'Med' 
+when bldg_fl5yr_yn = 'yes' 
+and class != '170' 
+and class != '416' 
+and class != '411' 
+and class != '180'
+then 'Med' 
 else 'High' 
 END) as exposure_levels,
-a.geom from parcels_fl5yr_tab as a;
+a.geom from parcels_fl5yr_tab as a
+where 
+class = '100' 
+or class < '200' 
+or class = '411'
+or class = '416' 
+or class = '635';
 
 update parcels_fl5yr_tab as a
 set exposure_levels = b.exposure_levels 
@@ -416,17 +445,27 @@ add column adcap_levels text,
 add column vuln_levels text;
 
 create or replace view ls_exposure as 
-select a.pin, 
+select a.pin, a.class,
 (case
 when bldg_ls_yn is null then 'Low'
-when bldg_ls_yn = 'yes' and class != '170' and class != '416' and class != '411' then 'Med' 
+when bldg_ls_yn = 'yes' 
+and class != '170' 
+and class != '416' 
+and class != '411' 
+and class != '180'
+then 'Med' 
 else 'High' 
 END) as exposure_levels,
-a.geom from parcels_ls_tab as a;
+a.geom from parcels_ls_tab as a
+where 
+class = '100' 
+or class < '200' 
+or class = '411'
+or class = '416';
 
 update parcels_ls_tab as a
 set exposure_levels = b.exposure_levels 
-from fl5yr_exposure as b 
+from ls_exposure as b 
 where a.pin = b.pin;
 
 create or replace view ls_adcap as 
