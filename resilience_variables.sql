@@ -622,6 +622,12 @@ add column exposure_levels text,
 add column adcap_levels text,
 add column vuln_levels text,
 add column parcel_type text, 
+add column exposure_levels5 text,
+add column adcap_levels5 text,
+add column vuln_levels5 text,
+add column exposure_levels_ls text,
+add column adcap_levels_ls text,
+add column vuln_levels_ls text,
 add column year numeric, 
 add column class character varying(10),
 add column sqft numeric,
@@ -689,15 +695,25 @@ where a.pinnum = b.pinnum;
 update resilience_variables as a
 set exposure_levels  =  b.exposure_levels 
 from parcels_fl1yr_tab as b
-where a.pinnum = b.pinnum;
+where a.pinnum = b.pin;
 
 update resilience_variables as a
-set adcap_levels5  =  b.adcap_levels
-from adcap_levels as b
+set adcap_levels  =  b.adcap_levels
+from parcels_fl1yr_tab as b
+where a.pinnum = b.pin;
+
+update resilience_variables as a
+set vuln_levels  =  b.vuln_levels 
+from parcels_fl1yr_tab as b
 where a.pinnum = b.pin;
 
 update resilience_variables as a
 set exposure_levels5  =  b.exposure_levels 
+from parcels_fl5yr_tab as b
+where a.pinnum = b.pin;
+
+update resilience_variables as a
+set adcap_levels5  =  b.adcap_levels
 from parcels_fl5yr_tab as b
 where a.pinnum = b.pin;
 
@@ -707,23 +723,28 @@ from parcels_fl5yr_tab as b
 where a.pinnum = b.pin;
 
 update resilience_variables as a
-set adcap_levels5  =  b.adcap_levels
-from parcels_fl5yr_tab as b
-where a.pinnum = b.pin;
+set exposure_levels_ls =  b.adcap_levels
+from parcels_ls_tab as b
+where a.pinnum = b.pin; 
+
+update resilience_variables as a
+set adcap_levels_ls  =  b.adcap_levels
+from parcels_ls_tab as b
+where a.pinnum = b.pin; 
+
+update resilience_variables as a
+set vuln_levels_ls  =  b.adcap_levels
+from parcels_ls_tab as b
+where a.pinnum = b.pin; 
 
 update resilience_variables as a
 set year  =  b.year_built
-from parcels_fl5yr_tab as b
-where a.pinnum = b.pin;
+from year_built_com as b
+where a.pinnum = b.pinnum;
 
 update resilience_variables as a
-set adcap_levels5  =  b.adcap_levels
-from parcels_fl5yr_tab as b
-where a.pinnum = b.pin;
-
-update resilience_variables as a
-set year  =  b.year
-from as b
+set year  =  b.year_built
+from year_built_res as b
 where a.pinnum = b.pinnum;
 
 update resilience_variables as a
