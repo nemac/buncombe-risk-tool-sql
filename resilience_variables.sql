@@ -34,6 +34,37 @@
 -- bldvalue_nrm	parcel building value normalized to building sq ft ?
 
 
+create table resilience_variables();
+
+alter table resilience_variables
+add column pinnum character varying(50),
+add column totalmarke numeric(10,0),
+add column appraisedv numeric(10,0),
+add column taxvalue numeric(10,0),
+add column buildingva numeric(10,0),
+add column tractce character varying(6),
+add column blockce10 character varying(4),
+add column blkgrpce character varying(1),
+add column blockgroup_geoid10 text;
+add column acreage numeric, 
+add column ownership text,
+add column parcel_type text, 
+add column exposure_levels1 text,
+add column adcap_levels1 text,
+add column vuln_levels1 text,
+add column exposure_levels5 text,
+add column adcap_levels5 text,
+add column vuln_levels5 text,
+add column exposure_levels_ls text,
+add column adcap_levels_ls text,
+add column vuln_levels_ls text,
+add column year numeric, 
+add column class character varying(10),
+add column sqft numeric,
+add column par_fl1yr_yn text,
+add column par_fl5yr_yn text,
+add column build_par_flqyr_yn text,
+add column build_par_fl5yr_yn text;
 
 --The creation of the exposure levels and adaptive capacity data table
 --This process includes creating the tables intersecting of parcels and features within the 100 and 500 year floodplain
@@ -71,82 +102,6 @@ SELECT parcel_id, SUM(count) As num_pixels
  WHERE count > 0
 	GROUP BY parcel_id
 	ORDER BY max_pval;
-
-
----CREATE 100 YEAR FLOODPLAIN VIEW-------------------
-create or replace view fl1yr_exposure as 
-Select pinnum as pinnum,
-sum(appraisedv) as ap,
-sum(buildingva) as bv,
-sum(landvalue) as lv,
-count(*) as parcels
-from property as p
-join fl1yr as f
-on ST_Intersects(p.geom, f.geom)
-group by pinnum;
-
-----CREATE 100 YEAR FLOODED BUILDINGS----------
-create or replace view fl1yr_build_exposure as 
-Select pinnum as pinnum,
-sum(appraisedv) as ap,
-sum(buildingva) as bv,
-sum(landvalue) as lv,
-count(*) as parcels
-from building_footprints as p
-join fl1yr as f
-on ST_Intersects(p.geom, f.geom)
-group by pinnum;
-
-
---CREATE 500 YEAR FLOODPLAIN VIEW-------------------
-create or replace view fl5yr_exposure as 
-Select pinnum as pinnum,
-sum(appraisedv) as ap,
-sum(buildingva) as bv,
-sum(landvalue) as lv,
-count(*) as parcels
-from property as p
-join fl5yr as f
-on ST_Intersects(p.geom, f.geom)
-group by pinnum;
-
-----CREATE 500 YEAR FLOODED BUILDINGS----------
-create or replace view fl5yr_build_exposure as 
-Select pinnum as pinnum,
-sum(appraisedv) as ap,
-sum(buildingva) as bv,
-sum(landvalue) as lv,
-count(*) as parcels
-from building_footprints as p
-join fl5yr as f
-on ST_Intersects(p.geom, f.geom)
-group by pinnum;
-
------CREATE DEBRIS FLOW VIEW-----------------
-create or replace view debrflow_exposure as 
-Select pinnum as pinnum,
-sum(appraisedv) as ap,
-sum(buildingva) as bv,
-sum(landvalue) as lv,
-count(*) as parcels
-from property as p
-join debris_flow as f
-on ST_Intersects(p.geom, f.geom)
-group by pinnum;
-
-
------CREATE DEBRIS FLOW VIEW BUILDINGS-----------------
-create or replace view debrflow_build_exposure as 
-Select pinnum as pinnum,
-sum(appraisedv) as ap,
-sum(buildingva) as bv,
-sum(landvalue) as lv,
-count(*) as parcels
-from building_footprints as p
-join debris_flow as f
-on ST_Intersects(f.geom, p.geom)
-group by pinnum;
-
 
 ---CREATE PARCELS IN DEBRIS FLOW VIEW BUILDINGS----------------
 
@@ -218,6 +173,10 @@ group by a.pin, a.geom;
 ------Join fields that will be used for the vulnerability rankings-------
 
 ---Parcels within 100 year flood plain attribute gathering----------
+create or replace view par_fl1yr_yn as 
+select a.pin, (case when a.pin = b.pin then 'yes' else 
+null end) as yes_no from par_fl1yr_yn_v2 as a, parcels_fl1yr_tab as b 
+where a.pin= b.pin;
 
 create or replace view build_par_fl1yr_yn as 
 select a.pin, (case when a.pin = b.pin then 'yes' else 
@@ -245,6 +204,10 @@ where a.pin = b.pin
 
 
 ---Parcels within 500 year flood plain attribute gathering----------
+create or replace view par_fl5yr_yn as 
+select a.pin, (case when a.pin = b.pin then 'yes' else 
+null end) as yes_no from par_fl5yr_yn_v2 as a, parcels_fl5yr_tab as b 
+where a.pin= b.pin;  
 
 create or replace view build_par_fl5yr_yn as 
 select a.pin, (case when a.pin = b.pin then 'yes' else 
@@ -272,7 +235,10 @@ where a.pin = b.pin;
 
 
 ---Parcels within debris flow attribute gathering----------
-
+create or replace view par_ls_yn as 
+select a.pin, (case when a.pin = b.pin then 'yes' else 
+null end) as yes_no from par_ls_yn_v2 as a, parcels_ls_tab as b 
+where a.pin= b.pin;  
 
 create or replace view build_par_ls_yn as 
 select a.pin, (case when a.pin = b.pin then 'yes' else 
@@ -373,12 +339,6 @@ from fl1yr_vuln as b
 where a.pin = b.pin;
 
 -----Parcels within the 500 year floodplain exposure, adaptive apacity and vulnerability metric------------------
-alter table parcels_fl5yr_tab 
-add column exposure_levels text,
-add column adcap_levels text,
-add column vuln_levels text;
-
-
 create or replace view fl5yr_exposure as 
 select a.pin, a.class,
 (case
@@ -439,10 +399,6 @@ from fl5yr_vuln as b
 where a.pin = b.pin;
 
 -----Parcels within the landslided debris exposure, adaptive apacity and vulnerability metric------------------
-alter table parcels_ls_tab 
-add column exposure_levels text,
-add column adcap_levels text,
-add column vuln_levels text;
 
 create or replace view ls_exposure as 
 select a.pin, a.class,
@@ -528,64 +484,6 @@ sum(acreage) as acreage, geom
 from census_parcel 
 group by gid, blockce10, geom;
 
-----------------------------------------This is the start of the building classification vulnerability queries--------------
-create or replace view buildingsfl1 as
-Select p.* from building_footprints as p
-join fl1yr as f
-on ST_Intersects(p.geom, f.geom);
-
-create or replace view property_buildingfl1 as
-select p.*
-from property as p 
-inner join buildingsfl1 on p.pinnum = buildingsfl1.pinnum; 
-
-create or replace view buildingsfl5 as
-Select p.* from building_footprints as p
-join fl5yr as f
-on ST_Intersects(p.geom, f.geom);
-
-create or replace view property_buildingfl5 as
-select p.*
-from property as p 
-inner join buildingsfl5 on p.pinnum = buildingsfl5.pinnum; 
-
-create or replace view buildingsls as
-Select p.* from building_footprints as p
-join debris_flow as f
-on ST_Intersects(p.geom, f.geom);
-
-create or replace view property_buildingls as
-select p.*
-from property as p 
-inner join buildingsls on p.pinnum = buildingsls.pinnum; 
-
-
-alter table property add column building_fl1 "text";
-alter table property add column building_fl5 "text";
-alter table property add column building_ls "text";
-
-update property set building_fl1 = 
-CASE WHEN EXISTS 
-(SELECT * FROM property_buildingfl1 as a
-WHERE  a.pinnum = property.pinnum ) 
-THEN 1 ELSE 0 END;
-
-update property set building_fl5 = 
-CASE WHEN EXISTS 
-(SELECT * FROM property_buildingfl5 as a
-WHERE  a.pinnum = b.pinnum ) 
-THEN 'yes' ELSE 'no'
-end from property as b
-
-update property set building_ls = 
-CASE WHEN EXISTS 
-(SELECT * FROM property_buildingls as a
-WHERE  a.pinnum = b.pinnum ) 
-THEN 'yes' ELSE 'no'
-end from property as b
-
-
-
 create table parcel_type as
 select gid, pinnum, (CASE WHEN class >= '100' AND class < '200' THEN 'Residential'
 WHEN class = '411' THEN 'Residential'
@@ -630,110 +528,8 @@ where
 class >= '100' and class < '200' 
 or class = '416' 
 or class = '411'
-or class = '635' 
+or class = '635';
 
-create or replace view par_fl1yr_yn as 
-select a.pin, (case when a.pin = b.pin then 'yes' else 
-null end) as yes_no from par_fl1yr_yn_v2 as a, parcels_fl1yr_tab as b 
-where a.pin= b.pin
-
-create or replace view par_fl5yr_yn as 
-select a.pin, (case when a.pin = b.pin then 'yes' else 
-null end) as yes_no from par_fl5yr_yn_v2 as a, parcels_fl5yr_tab as b 
-where a.pin= b.pin  
-
-alter table resilience_variables
-add column pinnum character varying(50),
-add column totalmarke numeric(10,0),
-add column appraisedv numeric(10,0),
-add column taxvalue numeric(10,0),
-add column buildingva numeric(10,0),
-add column tractce character varying(6),
-add column blockce10 character varying(4),
-add column blkgrpce character varying(1),
-add column blockgroup_geoid10 text;
-add column acreage numeric, 
-add column ownership text,
-add column parcel_type text, 
-add column exposure_levels1 text,
-add column adcap_levels1 text,
-add column vuln_levels1 text,
-add column exposure_levels5 text,
-
-594
-595
-596
-597
-598
-599
-600
-601
-602
-603
-604
-605
-606
-607
-608
-609
-610
-611
-612
-613
-614
-615
-616
-617
-618
-619
-620
-621
-622
-623
-or class = '635' 
-create or replace view par_fl1yr_yn as 
-select a.pin, (case when a.pin = b.pin then 'yes' else 
-null end) as yes_no from par_fl1yr_yn_v2 as a, parcels_fl1yr_tab as b 
-where a.pin= b.pin
-create or replace view par_fl5yr_yn as 
-select a.pin, (case when a.pin = b.pin then 'yes' else 
-null end) as yes_no from par_fl5yr_yn_v2 as a, parcels_fl5yr_tab as b 
-where a.pin= b.pin  
-alter table resilience_variables
-add column pinnum character varying(50),
-add column totalmarke numeric(10,0),
-add column appraisedv numeric(10,0),
-add column taxvalue numeric(10,0),
-add column buildingva numeric(10,0),
-add column tractce character varying(6),
-add column blockce10 character varying(4),
-add column blkgrpce character varying(1),
-add column blockgroup_geoid10 text;
-add column acreage numeric, 
-add column ownership text,
-add column parcel_type text, 
-add column exposure_levels1 text,
-add column adcap_levels1 text,
-add column vuln_levels1 text,
-add column exposure_levels5 text,
-
-add column adcap_levels5 text,
-add column vuln_levels5 text,
-add column exposure_levels_ls text,
-add column adcap_levels_ls text,
-add column vuln_levels_ls text,
-add column year numeric, 
-add column class character varying(10),
-add column sqft numeric,
-add column par_fl1yr_yn text,
-add column par_fl5yr_yn text,
-add column build_par_flqyr_yn text,
-add column build_par_fl5yr_yn text;
-
-alter table resilience_variables
-add column adcap_levels5
-add column vuln_levels5,
-add column parcel_type5; 
 
 update resilience_variables as a
 set blockce10  =  b.blockce10
