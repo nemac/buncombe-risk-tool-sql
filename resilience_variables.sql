@@ -64,7 +64,9 @@ add column sqft numeric,
 add column par_fl1yr_yn text,
 add column par_fl5yr_yn text,
 add column build_par_flqyr_yn text,
-add column build_par_fl5yr_yn text;
+add column build_par_fl5yr_yn text,
+add column landval_nrm numeric,
+add column bldvalue_nrm numeric;
 
 --The creation of the exposure levels and adaptive capacity data table
 --This process includes creating the tables intersecting of parcels and features within the 100 and 500 year floodplain
