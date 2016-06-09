@@ -1,3 +1,4 @@
+--This is the SQL to create the parcel variables  
 -- Variable 	Description
 -- Pinnum	Unique parcel id
 -- cblock	census block
@@ -25,6 +26,13 @@
 -- class	parcel class #
 -- type	type of parcel (based on parcel class groupings)
 -- bld_sqft	building sq footage 
+-- lsexposure	landslide exposure ? 
+-- lsadatpcap	landslide adaptive capacity ? 
+-- lsvuln	landslide vulnerability ?
+-- lsrisk	landslide risk ?
+-- landval_nrm	parcel land value normalized to acres of parcel ?
+-- bldvalue_nrm	parcel building value normalized to building sq ft ?
+
 
 
 --The creation of the exposure levels and adaptive capacity data table
