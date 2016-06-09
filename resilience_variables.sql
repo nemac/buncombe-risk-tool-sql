@@ -173,9 +173,13 @@ group by a.pin, a.geom;
 ------Join fields that will be used for the vulnerability rankings-------
 
 ---Parcels within 100 year flood plain attribute gathering----------
+
+create or replace view parcels_fl1yr_vw as
+select * from parcels_fl1yr_tab;
+
 create or replace view par_fl1yr_yn as 
 select a.pin, (case when a.pin = b.pin then 'yes' else 
-null end) as yes_no from par_fl1yr_yn_v2 as a, parcels_fl1yr_tab as b 
+null end) as yes_no from parcels_fl1yr_vw as a, parcels_fl1yr_tab as b 
 where a.pin= b.pin;
 
 create or replace view build_par_fl1yr_yn as 
@@ -204,9 +208,12 @@ where a.pin = b.pin
 
 
 ---Parcels within 500 year flood plain attribute gathering----------
+create or replace view parcels_fl5yr_vw as
+select * from parcels_fl5yr_tab;
+
 create or replace view par_fl5yr_yn as 
 select a.pin, (case when a.pin = b.pin then 'yes' else 
-null end) as yes_no from par_fl5yr_yn_v2 as a, parcels_fl5yr_tab as b 
+null end) as yes_no from parcels_fl5yr_vw as a, parcels_fl5yr_tab as b 
 where a.pin= b.pin;  
 
 create or replace view build_par_fl5yr_yn as 
@@ -233,11 +240,13 @@ set bldg_fl5yr_yn = b.yes_no
 from build_par_fl5yr_yn as b
 where a.pin = b.pin;
 
-
 ---Parcels within debris flow attribute gathering----------
+create or replace view parcels_ls_vw as
+select * from parcels_ls_tab;
+
 create or replace view par_ls_yn as 
 select a.pin, (case when a.pin = b.pin then 'yes' else 
-null end) as yes_no from par_ls_yn_v2 as a, parcels_ls_tab as b 
+null end) as yes_no from parcels_ls_vw as a, parcels_ls_tab as b 
 where a.pin= b.pin;  
 
 create or replace view build_par_ls_yn as 
