@@ -577,13 +577,14 @@ set appraisedv =  b.appraisedv
 from property_4326 as b
 where a.pinnum = b.pinnum;
 
+
 update resilience_variables as a
 set taxvalue  =  b.taxvalue 
 from property_4326 as b
 where a.pinnum = b.pinnum;
 
 update resilience_variables as a
-set acreage  =  b.taxvalue 
+set acreage  =  b.acreage 
 from property_4326 as b
 where a.pinnum = b.pinnum;
 
