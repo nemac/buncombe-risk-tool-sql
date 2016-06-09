@@ -662,3 +662,13 @@ update resilience_variables as a
 set sqft =  b.sum 
 from build_sqft_group_pinnum as b
 where a.pinnum = b.pinnum;
+
+update resilience_variables as a
+set landval_nrm  =  b.landval_nrm
+from landval_nrm as b
+where a.pinnum = b.pinnum;
+
+update resilience_variables as a
+set bldvalue_nrm =  b.bldvalue_nrm 
+from bldvalue_nrm as b
+where a.pinnum = b.pinnum;
