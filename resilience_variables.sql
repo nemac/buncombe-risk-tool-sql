@@ -259,7 +259,7 @@ where a.pin= b.pin
 
 alter table parcels_ls_tab 
 add column bldg_ls_yn text;
-update parcels_ls_tab as a 
+
 
 update parcels_ls_tab as a
 set year_built = b.year_built 
@@ -271,6 +271,7 @@ set year_built = b.year_built
 from year_built_res as b 
 where a.pin = b.pinnum; 
 
+update parcels_ls_tab as a
 set bldg_ls_yn = b.yes_no 
 from build_par_ls_yn as b
 where a.pin = b.pin;
