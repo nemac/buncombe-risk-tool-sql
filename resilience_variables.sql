@@ -273,6 +273,7 @@ where a.pin = b.pin;
 
 ---Parcels within debris flow attribute gathering----------
 
+
 create or replace view build_par_ls_yn as 
 select a.pin, (case when a.pin = b.pin then 'yes' else 
 null end) as yes_no from build_ls_tab as a, parcels_ls_tab as b 
@@ -281,6 +282,16 @@ where a.pin= b.pin
 alter table parcels_ls_tab 
 add column bldg_ls_yn text;
 update parcels_ls_tab as a 
+
+update parcels_ls_tab as a
+set year_built = b.year_built 
+from year_built_com as b 
+where a.pin = b.pinnum;
+
+update parcels_ls_tab as a
+set year_built = b.year_built 
+from year_built_res as b 
+where a.pin = b.pinnum; 
 
 set bldg_ls_yn = b.yes_no 
 from build_par_ls_yn as b
