@@ -63,6 +63,7 @@ add column class character varying(10),
 add column sqft numeric,
 add column par_fl1yr_yn text,
 add column par_fl5yr_yn text,
+add column par_ls_yn text,
 add column bldg_fl1yr_yn text,
 add column bldg_fl5yr_yn text,
 add column bldg_ls_yn text,
@@ -75,36 +76,6 @@ add column bldvalue_nrm numeric;
 --Once the exposued features have been found then a field is added to show whether or not the building within the parcel is also exposed--
 --Year built values are then joined to the parcels data gatherinh all the metrics needed to assess vulbnerability-----
 
-
-CREATE table wf_results as
-WITH 
--- our features of interest
-   feat AS (SELECT pinnum As parcel_id, geom FROM property AS b 
-    WHERE (PIN > '0')) ,
--- clip band of raster tiles to boundaries of builds
--- then get stats for these clipped regions
- b_stats AS
-	(SELECT  parcel_id, (stats).*
-FROM (SELECT parcel_id, (ST_SummaryStats(ST_Clip(rast,1,geom,NULL,true),TRUE)) As stats
-    FROM wildfire
-		INNER JOIN feat
-	ON ST_Intersects(feat.geom, rast) 
- ) As foo
- )
--- finally summarize stats
-SELECT parcel_id, SUM(count) As num_pixels
-  , MIN(min) As min_pval
-  ,  MAX((CASE
-	WHEN max >= 78 THEN 'High Risk'
-	WHEN max >= 67 and max < 78   THEN 'Medium High Risk'
-	WHEN max >= 33 and max < 67 THEN 'Medium'
-	ELSE 'Low Risk'
-	END)) As max_pval
-  , SUM(mean*count)/SUM(count) As avg_pval
-	FROM b_stats
- WHERE count > 0
-	GROUP BY parcel_id
-	ORDER BY max_pval;
 
 ---CREATE PARCELS IN DEBRIS FLOW VIEW BUILDINGS----------------
 
@@ -242,6 +213,16 @@ update parcels_fl5yr_tab as a
 set bldg_fl5yr_yn = b.yes_no 
 from build_par_fl5yr_yn as b
 where a.pin = b.pin;
+
+update parcels_fl1yr_tab as a
+set year_built  =  b.year_built
+from year_built_com as b
+where a.pin = b.pinnum;
+
+update parcels_fl1yr_tab as a
+set year_built  =  b.year_built
+from year_built_res as b
+where a.pin = b.pinnum;
 
 ---Parcels within debris flow attribute gathering----------
 create or replace view parcels_ls_vw as
@@ -694,4 +675,12 @@ where a.pinnum = b.pin
 update resilience_variables as a 
 set bldg_ls_yn = b.bldg_ls_yn 
 from parcels_ls_tab as b
-where a.pinnum = b.pin 
+where a.pinnum = b.pin;
+
+update resilience_variables as a
+set par_ls_yn  =  b.yes_no
+from par_ls_yn as b
+where a.pinnum = b.pin;
+
+
+
