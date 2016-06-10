@@ -619,7 +619,7 @@ from parcels_fl5yr_tab as b
 where a.pinnum = b.pin;
 
 update resilience_variables as a
-set exposure_levels_ls =  b.adcap_levels
+set exposure_levels_ls =  b.exposure_levels
 from parcels_ls_tab as b
 where a.pinnum = b.pin; 
 
@@ -629,7 +629,7 @@ from parcels_ls_tab as b
 where a.pinnum = b.pin; 
 
 update resilience_variables as a
-set vuln_levels_ls  =  b.adcap_levels
+set vuln_levels_ls  =  b.vuln_levels
 from parcels_ls_tab as b
 where a.pinnum = b.pin; 
 
