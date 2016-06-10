@@ -68,7 +68,8 @@ add column bldg_fl1yr_yn text,
 add column bldg_fl5yr_yn text,
 add column bldg_ls_yn text,
 add column landval_nrm numeric,
-add column bldvalue_nrm numeric;
+add column bldvalue_nrm numeric,
+add column geom geometry(multipolygon, 4326);
 
 --The creation of the exposure levels and adaptive capacity data table
 --This process includes creating the tables intersecting of parcels and features within the 100 and 500 year floodplain
@@ -682,5 +683,8 @@ set par_ls_yn  =  b.yes_no
 from par_ls_yn as b
 where a.pinnum = b.pin;
 
-
+update resilience_variables as a
+set geom  =  b.geom
+from property_4326 as b
+where a.pinnum = b.pinnum;
 
