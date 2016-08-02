@@ -777,7 +777,7 @@ select
 (select count(gid) from emergency_services_fld_cbg) as flooded,
 (select count(gid) from emergency_services_all) as total;
 
-create or replace view emegency_services_percentage as 
+create or replace view emergency_services_percentage as 
 select flooded, total, flooded/total::float * 100 as percentage from emergency_services_flooded_total
 group by flooded,total;
 
@@ -826,3 +826,15 @@ select
 create or replace view ecommercial_percentage as 
 select flooded, total, flooded/total::float * 100 as percentage from coa_parcels_flooded_total
 group by flooded,total;
+
+
+create view flood_percentages as 
+select * from emergency_services_percentage
+union all
+select * from historic_services_percentage
+union all 
+select * from coa_parks_percentage
+union all 
+select * from coa_parcels_percentage
+union all 
+select * from commercial_percentage
