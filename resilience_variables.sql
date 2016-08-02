@@ -686,7 +686,13 @@ where a.pinnum = b.pin;
 update resilience_variables as a
 set geom  =  b.geom
 from property_4326 as b
-where a.pinnum = b.pinnum;----------------emergency services analysis---------------
+where a.pinnum = b.pinnum;
+
+
+update resilience_variables 
+set geom = st_makevalid(geom);
+
+----------------emergency services analysis---------------
 
 create or replace view emergency_services_all as 
 select * from resilience_variables where class = '662' 
@@ -696,64 +702,64 @@ OR class = '642';
 
 create or replace view emergency_services as 
 select * from resilience_variables where par_fl5yr_ = 'yes' 
-AND (class = '662' OR class = '640' OR class = '641' OR class = '642')
+AND (class = '662' OR class = '640' OR class = '641' OR class = '642');
 
 create or replace view emergency_services_fld_cbg as 
-select a.gid, st_centroid(a.geom) from emergency_services as a
+select a.gid, st_centroid(a.geom)::geometry(point,4326) from emergency_services as a
 join coa_census_block_groups as b
-on st_intersects(a.geom, b.geom)
+on st_intersects(a.geom, b.geom);
 
 ---------historic landmark analysis-----------------------
-alter table historic_landmarks_register_properties_point
-add column fl5yr text
+alter table histroic_landmarks_register_properties_point 
+add column fld_exp text; 
 
 create or replace view fl5yr_histroic_structures as 
 select a.* from historic_landmarks_register_properties_point as a
 join fl5yr as b 
-on st_intersects(a.geom, b.geom)
+on st_intersects(a.geom, b.geom);
 
 create or replace view histroic_structures_yn_fl5yr as 
 select a.gid, (case when a.gid = b.gid then 'yes' else 
 null end) as yes_no from fl5yr_histroic_structures as a, historic_landmarks_register_properties_point as b 
-where a.gid= b.gid
+where a.gid= b.gid;
 
 update historic_landmarks_register_properties_point as a 
 set fl5yr = b.yes_no 
 from histroic_structures_yn_fl5yr as b
-where a.gid = b.gid
+where a.gid = b.gid;
 
 create or replace view historic_stuctures as 
 select * from historic_landmarks_register_properties_point where fl5yr = 'yes';
 
 create or replace view historic_stuctures_fld_cbg as 
-select a.gid, st_centroid(a.geom) from historic_stuctures as a
+select a.gid, st_centroid(a.geom)::geometry(point,4326) from historic_stuctures as a
 join coa_census_block_groups as b
-on st_intersects(a.geom, b.geom)
+on st_intersects(a.geom, b.geom);
 
 
--------------coa parks-------------------------------
+-------------coa parks analysis-------------------------------
 
 create or replace view coa_parks_vw as 
-select * from coa_parks where fld_exp = 'yes';
+select * from coa_parks where fld_exp = 'Yes';
 
 create or replace view coa_parks_fld_cbg as 
-select a.gid, st_centroid(a.geom) from coa_parks_vw as a
+select a.gid, st_centroid(a.geom)::geometry(point,4326) from coa_parks_vw as a
 join coa_census_block_groups as b
 on st_intersects(a.geom, b.geom);
 
 
 
--------coa parcels------------
+-------coa parcels analysis------------
 
 create or replace view coa_parcels_vw as 
-select * from coa_parcels where fld_exp = 'yes';
+select * from coa_parcels where fld_exp = 'Yes';
 
 create or replace view coa_parcles_fld_cbg as 
-select a.gid, st_centroid(a.geom) from coa_parcels_vw as a
+select a.gid, st_centroid(a.geom)::geometry(point,4326) from coa_parcels_vw as a
 join coa_census_block_groups as b
 on st_intersects(a.geom, b.geom);
 
--------commercial parcels---------
+-------commercial parcels analysis---------
 
 create or replace view commercial_properties_all as 
 select * from resilience_variables where 
@@ -764,11 +770,9 @@ create or replace view commercial_properties as
 select * from commercial_properties_all where par_fl5yr_ = 'yes';
 
 create or replace view commercial_properties_fld_cbg as 
-select a.gid, st_centroid(a.geom) from commercial_properties as a
+select a.gid, st_centroid(a.geom)::geometry(point,4326) from commercial_properties as a
 join coa_census_block_groups as b
 on st_intersects(a.geom, b.geom);
-
-
 
 
 --------emergency----------
@@ -823,9 +827,10 @@ select
 (select count(gid) from commercial_properties_fld_cbg) as flooded,
 (select count(gid) from commercial_properties_all) as total;
 
-create or replace view ecommercial_percentage as 
-select flooded, total, flooded/total::float * 100 as percentage from coa_parcels_flooded_total
+create or replace view commercial_percentage as 
+select flooded, total, flooded/total::float * 100 as percentage from commercial_flooded_total
 group by flooded,total;
+
 
 
 create view flood_percentages as 
