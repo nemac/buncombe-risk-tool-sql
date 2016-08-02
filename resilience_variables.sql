@@ -758,4 +758,54 @@ AND (class = '662' OR class = '640' OR class = '641' OR class = '642')
 
 
 
+--------emergency----------
+create or replace view emergency_services_flooded_total as
+select
+(select count(gid) from emergency_services_fld_cbg) as flooded,
+(select count(gid) from emergency_services_all) as total;
+
+create or replace view emegency_services_percentage as 
+select flooded, total, flooded/total::float * 100 as percentage from emergency_services_flooded_total
+group by flooded,total;
+
+
+-----historic-------
+create or replace view historic_flooded_total as
+select
+(select count(gid) from historic_stuctures_fld_cbg ) as flooded,
+(select count(gid) from historic_landmarks_register_properties_point) as total;
+
+create or replace view historic_services_percentage as 
+select flooded, total, flooded/total::float * 100 as percentage from historic_flooded_total
+group by flooded,total;
+
+
+---coa parks-------
+
+create or replace view coa_parks_flooded_total as
+select
+(select count(gid) from coa_parks_fld_cbg) as flooded,
+(select count(gid) from coa_parks) as total;
+
+create or replace view emegency_services_percentage as 
+select flooded, total, flooded/total::float * 100 as percentage from coa_parks_flooded_total
+group by flooded,total;
+
+
+---coa parcles------
+
+create or replace view coa_parcels_flooded_total as
+select
+(select count(gid) from coa_parcles_fld_cbg) as flooded,
+(select count(gid) from coa_parcels) as total;
+
+create or replace view emegency_services_percentage as 
+select flooded, total, flooded/total::float * 100 as percentage from coa_parcels_flooded_total
+group by flooded,total;
+
+
+---
+
+
+
 
