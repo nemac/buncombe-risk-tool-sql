@@ -686,9 +686,13 @@ where a.pinnum = b.pin;
 update resilience_variables as a
 set geom  =  b.geom
 from property_4326 as b
-where a.pinnum = b.pinnum;
+where a.pinnum = b.pinnum;----------------emergency services analysis---------------
 
-----------------emergency services analysis---------------
+create or replace view emergency_services_all as 
+select * from resilience_variables where class = '662' 
+OR class = '640' 
+OR class = '641' 
+OR class = '642';
 
 create or replace view emergency_services as 
 select * from resilience_variables where par_fl5yr_ = 'yes' 
@@ -751,9 +755,18 @@ on st_intersects(a.geom, b.geom);
 
 -------commercial parcels---------
 
+create or replace view commercial_properties_all as 
+select * from resilience_variables where 
+(class >= '400' AND class < '411') OR (class >= '412' and class < '416') 
+ OR (class >= '417' and class < '500');
+
 create or replace view commercial_properties as 
-select * from resilience_variables where par_fl5yr_ = 'yes' 
-AND (class = '662' OR class = '640' OR class = '641' OR class = '642')
+select * from commercial_properties_all where par_fl5yr_ = 'yes';
+
+create or replace view commercial_properties_fld_cbg as 
+select a.gid, st_centroid(a.geom) from commercial_properties as a
+join coa_census_block_groups as b
+on st_intersects(a.geom, b.geom);
 
 
 
@@ -787,7 +800,7 @@ select
 (select count(gid) from coa_parks_fld_cbg) as flooded,
 (select count(gid) from coa_parks) as total;
 
-create or replace view emegency_services_percentage as 
+create or replace view coa_parks_percentage as 
 select flooded, total, flooded/total::float * 100 as percentage from coa_parks_flooded_total
 group by flooded,total;
 
@@ -799,13 +812,17 @@ select
 (select count(gid) from coa_parcles_fld_cbg) as flooded,
 (select count(gid) from coa_parcels) as total;
 
-create or replace view emegency_services_percentage as 
+create or replace view coa_parcels_percentage as 
 select flooded, total, flooded/total::float * 100 as percentage from coa_parcels_flooded_total
 group by flooded,total;
 
 
----
+---commercial properties-------
+create or replace view commercial_flooded_total as
+select
+(select count(gid) from commercial_properties_fld_cbg) as flooded,
+(select count(gid) from commercial_properties_all) as total;
 
-
-
-
+create or replace view ecommercial_percentage as 
+select flooded, total, flooded/total::float * 100 as percentage from coa_parcels_flooded_total
+group by flooded,total;
