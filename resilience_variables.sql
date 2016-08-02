@@ -688,3 +688,74 @@ set geom  =  b.geom
 from property_4326 as b
 where a.pinnum = b.pinnum;
 
+----------------emergency services analysis---------------
+
+create or replace view emergency_services as 
+select * from resilience_variables where par_fl5yr_ = 'yes' 
+AND (class = '662' OR class = '640' OR class = '641' OR class = '642')
+
+create or replace view emergency_services_fld_cbg as 
+select a.gid, st_centroid(a.geom) from emergency_services as a
+join coa_census_block_groups as b
+on st_intersects(a.geom, b.geom)
+
+---------historic landmark analysis-----------------------
+alter table historic_landmarks_register_properties_point
+add column fl5yr text
+
+create or replace view fl5yr_histroic_structures as 
+select a.* from historic_landmarks_register_properties_point as a
+join fl5yr as b 
+on st_intersects(a.geom, b.geom)
+
+create or replace view histroic_structures_yn_fl5yr as 
+select a.gid, (case when a.gid = b.gid then 'yes' else 
+null end) as yes_no from fl5yr_histroic_structures as a, historic_landmarks_register_properties_point as b 
+where a.gid= b.gid
+
+update historic_landmarks_register_properties_point as a 
+set fl5yr = b.yes_no 
+from histroic_structures_yn_fl5yr as b
+where a.gid = b.gid
+
+create or replace view historic_stuctures as 
+select * from historic_landmarks_register_properties_point where fl5yr = 'yes';
+
+create or replace view historic_stuctures_fld_cbg as 
+select a.gid, st_centroid(a.geom) from historic_stuctures as a
+join coa_census_block_groups as b
+on st_intersects(a.geom, b.geom)
+
+
+-------------coa parks-------------------------------
+
+create or replace view coa_parks_vw as 
+select * from coa_parks where fld_exp = 'yes';
+
+create or replace view coa_parks_fld_cbg as 
+select a.gid, st_centroid(a.geom) from coa_parks_vw as a
+join coa_census_block_groups as b
+on st_intersects(a.geom, b.geom);
+
+
+
+-------coa parcels------------
+
+create or replace view coa_parcels_vw as 
+select * from coa_parcels where fld_exp = 'yes';
+
+create or replace view coa_parcles_fld_cbg as 
+select a.gid, st_centroid(a.geom) from coa_parcels_vw as a
+join coa_census_block_groups as b
+on st_intersects(a.geom, b.geom);
+
+-------commercial parcels---------
+
+create or replace view commercial_properties as 
+select * from resilience_variables where par_fl5yr_ = 'yes' 
+AND (class = '662' OR class = '640' OR class = '641' OR class = '642')
+
+
+
+
+
