@@ -690,9 +690,7 @@ where a.pinnum = b.pinnum;
 
 
 update resilience_variables 
-set geom = st_makevalid(geom);
-
-drop view emergency_services_fld_cbg cascade;
+set geom = st_makevalid(geom);drop view emergency_services_fld_cbg cascade;
 drop view historic_stuctures_fld_cbg cascade;
 drop view coa_parks_fld_cbg cascade;
 drop view coa_parcels_fld_cbg cascade;
@@ -767,13 +765,30 @@ on st_intersects(a.geom, b.geom);
 create or replace view commercial_properties_all as 
 select * from resilience_variables where 
 (class >= '400' AND class < '411') OR (class >= '412' and class < '416') 
- OR (class >= '417' and class < '500');
+ OR (class >= '417' and class < '500') OR (class >= '700' and class < '800');
 
 create or replace view commercial_properties as 
 select * from commercial_properties_all where par_fl5yr_ = 'yes';
 
 create or replace view commercial_properties_fld_cbg as 
 select a.gid, a.pinnum, st_centroid(a.geom)::geometry(point,4326) from commercial_properties as a
+join coa_census_block_groups as b
+on st_intersects(a.geom, b.geom);
+
+
+-----residential parcel analysis----------
+create or replace view residential_parcels_all as 
+select * from resilience_variables
+where parcel_typ = 'Residential';
+
+create or replace view residential_parcels as
+ select * from resilience_variables 
+ where parcel_typ = 'Residential' and 
+ par_fl5yr_ = 'yes';
+
+create or replace view residential_fld_cbg as 
+select a.gid, a.pinnum, st_centroid(a.geom)::geometry(point,4326) as geom 
+from residential_parcels as a
 join coa_census_block_groups as b
 on st_intersects(a.geom, b.geom);
 
@@ -836,15 +851,27 @@ group by flooded,total;
 
 
 
-create view flood_percentages as 
-select * from emergency_services_percentage
-union all
+-----residential------------------
+create or replace view residential_flooded_total as
+select
+(select count(gid) from residential_fld_cbg) as flooded,
+(select count(gid) from residential_parcels_all) as total;
+
+create or replace view residential_percentage as 
+select flooded, total, flooded/total::float * 100 as percentage from residential_flooded_total
+group by flooded,total;
+
+create or replace view flood_percentages as 
 select * from historic_services_percentage
+union all
+select * from emergency_services_percentage 
 union all 
 select * from coa_parks_percentage
 union all 
 select * from coa_parcels_percentage
 union all 
 select * from commercial_percentage
+union all
+select * from residential_percentage
 
-select * from commercial_percentage
+select * from flood_percentages;
