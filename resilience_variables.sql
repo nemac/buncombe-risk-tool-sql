@@ -857,6 +857,7 @@ select
 (select count(gid) from residential_fld_cbg) as flooded,
 (select count(gid) from residential_parcels_all) as total;
 
+
 create or replace view residential_percentage as 
 select flooded, total, flooded/total::float * 100 as percentage from residential_flooded_total
 group by flooded,total;
@@ -875,3 +876,20 @@ union all
 select * from residential_percentage
 
 select * from flood_percentages;
+
+
+-----county block group residential parcel analysis----------
+create or replace view cbg_commercial as 
+select count(a.gid), b.blkgrp as block_group, b.geom as geom from commercial_properties as a
+join coa_census_block_groups as b
+on st_intersects(a.geom, b.geom)
+group by block_group, b.geom;
+
+
+-----county block group residential parcel analysis----------
+create or replace view cbg_residential as 
+select count(a.gid), b.blkgrp as block_group, b.geom as geom 
+from residential_parcels as a
+join coa_census_block_groups as b
+on st_intersects(a.geom, b.geom)
+group by block_group, b.geom;
