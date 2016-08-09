@@ -1,3 +1,10 @@
+create or replace view building_pinnum_vw as
+SELECT a.pinnum as pin, b.geom 
+from resilience_variables as a 
+join building_footprints as b 
+on st_intersects(a.geom,b.geom)
+group by a.pinnum, b.geom;  
+
 alter table resilience_variables
 add column asset_type text;
 
