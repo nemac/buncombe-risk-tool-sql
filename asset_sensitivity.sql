@@ -28,11 +28,9 @@ null end) as asset_type from historic_structures_vw as a, resilience_variables a
 where a.pinnum = b.pinnum;
 
 create or replace view asset_type as 
-select gid, pinnum, (CASE WHEN class >= '100' AND class < '200' THEN 'Residential'
-WHEN class = '411' THEN 'Residential'
-WHEN class = '416' THEN 'Residential'
-WHEN class = '635' THEN 'Residential'
-WHEN class >= '400' AND class < '411' THEN 'Commercial'
+select gid, pinnum, (
+CASE WHEN class >= '400' AND class < '411' THEN 'Commercial'
+when class = '934' THEN 'City Parks'
 WHEN class >= '412' AND class < '416' THEN 'Commercial'
 WHEN class >= '417' AND class < '500' THEN 'Commercial'
 WHEN class >= '700' AND class < '800' THEN 'Industrial'
@@ -50,7 +48,7 @@ WHEN class = '662' THEN 'Emerg Services'
 WHEN class = '820' THEN 'Water Resources'
 WHEN class = '822' THEN 'Water Resources'     
 WHEN class = '853' THEN 'Water Resources'
-ELSE 'Unclassified' END) as asset_type, geom
+ELSE null END) as asset_type, geom
 from resilience_variables;
 
 update resilience_variables as a 
