@@ -72,70 +72,257 @@ update resilience_variables as a
 set asset_type = b.asset_type
 from historic_district_define_vw as b 
 where a.pinnum = b.pinnum;
+--------------------------------communications---------------------------------
+create or replace view communications_vw as 
+select * from resilience_variables where asset_type = 'Comunnications';
 
 create or replace view communications_fld_vw as 
 select * from resilience_variables where asset_type = 'Communications' 
 and par_fl5yr_ = 'yes';
 
+create or replace view communications_flooded_total as
+select
+(select count(pinnum) from communications_fld_vw) as flooded,
+(select count(pinnum) from communications_vw) as total;
 
-create or replace view communications_fld_vw as 
+create or replace view communications_fld_percentage as 
+select flooded, total, flooded/total::float * 100 as percentage from communications_flooded_total
+group by flooded,total;
+
+create or replace view communications_ls_vw as 
 select * from resilience_variables where asset_type = 'Communications' 
 and par_ls_yn = 'yes';
 
+create or replace view communications_ls_total as
+select
+(select count(pinnum) from communications_ls_vw) as landslide,
+(select count(pinnum) from communications_vw) as total;
+
+create or replace view communications_ls_percentage as 
+select landslide, total, landslide/total::float * 100 as percentage from communications_ls_total
+group by landslide,total;
+
+
+
+
+----------------------------commercial---------------------------------------------
+
+create or replace view commercial_vw as 
+select * from resilience_variables where asset_type = 'Commercial';
 
 create or replace view commercial_fld_vw as 
 select * from resilience_variables where asset_type = 'Commercial' 
 and par_fl5yr_ = 'yes';
 
-create or replace view commercial_fld_vw as 
+create or replace view commercial_flooded_total as
+select
+(select count(pinnum) from commercial_fld_vw) as flooded,
+(select count(pinnum) from commercial_vw) as total;
+
+create or replace view commercial_fld_percentage as 
+select flooded, total, flooded/total::float * 100 as percentage from commercial_flooded_total
+group by flooded,total;
+
+create or replace view commercial_ls_vw as 
 select * from resilience_variables where asset_type = 'Commercial' 
 and par_ls_yn = 'yes';
+
+create or replace view commercial_ls_total as
+select
+(select count(pinnum) from commercial_ls_vw) as landslide,
+(select count(pinnum) from commercial_vw) as total;
+
+create or replace view commercial_ls_percentage as 
+select landslide, total, landslide/total::float * 100 as percentage from commercial_ls_total
+group by landslide,total;
+
+
+--------------------industrial-------------------------------------------
+
+create or replace view industrial_vw  as 
+select * from resilience_variables where asset_type = 'Industrial'; 
 
 create or replace view industrial_fld_vw  as 
 select * from resilience_variables where asset_type = 'Industrial' 
 and par_fl5yr_ = 'yes';
 
+create or replace view industrial_flooded_total as
+select
+(select count(pinnum) from industrial_fld_vw) as flooded,
+(select count(pinnum) from industrial_vw) as total;
+
+create or replace view industrial_fld_percentage as 
+select flooded, total, flooded/total::float * 100 as percentage from industrial_flooded_total
+group by flooded,total;
+
 create or replace view industrial_ls_vw as 
 select * from resilience_variables where asset_type = 'Industrial' 
 and par_ls_yn = 'yes';
 
+create or replace view industrial_ls_total as
+select
+(select count(pinnum) from industrial_ls_vw) as landslide,
+(select count(pinnum) from industrial_vw) as total;
+
+create or replace view industrial_ls_percentage as 
+select landslide, total, landslide/total::float * 100 as percentage from industrial_ls_total
+group by landslide,total;
+
+
+--------------------energy----------------------------------------------
+create or replace view energy_vw as 
+select * from resilience_variables where asset_type = 'Energy';
 
 create or replace view energy_fld_vw as 
 select * from resilience_variables where asset_type = 'Energy' 
 and par_fl5yr_ = 'yes';
 
+create or replace view energy_flooded_total as
+select
+(select count(pinnum) from energy_fld_vw) as flooded,
+(select count(pinnum) from energy_vw) as total;
+
+create or replace view energy_fld_percentage as 
+select flooded, total, flooded/total::float * 100 as percentage from energy_flooded_total
+group by flooded,total;
+
 create or replace view energy_ls_vw as 
 select * from resilience_variables where asset_type = 'Energy' 
 and par_ls_yn = 'yes';
+
+create or replace view energy_ls_total as
+select
+(select count(pinnum) from energy_ls_vw) as landslide,
+(select count(pinnum) from energy_vw) as total;
+
+create or replace view energy_ls_percentage as 
+select landslide, total, landslide/total::float * 100 as percentage from energy_ls_total
+group by landslide,total;
+
+
+------------------------emergency----------------------------------------
+
+create or replace view emergency_services_vw as 
+select * from resilience_variables where asset_type = 'Emerg Services';
 
 create or replace view emergency_services_fld_vw as 
 select * from resilience_variables where asset_type = 'Emerg Services' 
 and par_fl5yr_ = 'yes';
 
+
+create or replace view emergency_services_flooded_total as
+select
+(select count(pinnum) from emergency_services_fld_vw) as flooded,
+(select count(pinnum) from emergency_services_vw) as total;
+
+create or replace view emergency_services_fld_percentage as 
+select flooded, total, flooded/total::float * 100 as percentage from emergency_services_flooded_total
+group by flooded,total;
+
 create or replace view emergency_services_ls_vw as 
 select * from resilience_variables where asset_type = 'Emerg Services' 
 and par_ls_yn = 'yes';
+
+create or replace view emergency_services_ls_total as
+select
+(select count(pinnum) from emergency_services_ls_vw) as landslide,
+(select count(pinnum) from energy_vw) as total;
+
+create or replace view emergency_services_ls_percentage as 
+select landslide, total, landslide/total::float * 100 as percentage from emergency_services_ls_total
+group by landslide,total;
+
+
+-------------------------water resources-------------------------------
+create or replace view water_resources_vw as 
+select * from resilience_variables where asset_type = 'Water Resources';
 
 create or replace view water_resources_fld_vw as 
 select * from resilience_variables where asset_type = 'Water Resources' 
 and par_fl5yr_ = 'yes';
 
+create or replace view water_resources_flooded_total as
+select
+(select count(pinnum) from water_resources_fld_vw) as flooded,
+(select count(pinnum) from water_resources_vw) as total;
+
+create or replace view water_resources_fld_percentage as 
+select flooded, total, flooded/total::float * 100 as percentage from water_resources_flooded_total
+group by flooded,total;
+
 create or replace view water_resources_ls_vw as 
 select * from resilience_variables where asset_type = 'Water Resources' 
 and par_ls_yn = 'yes';
+
+create or replace view water_resources_ls_total as
+select
+(select count(pinnum) from water_resources_ls_vw) as landslide,
+(select count(pinnum) from water_resources_vw) as total;
+
+create or replace view water_resources_ls_percentage as 
+select landslide, total, landslide/total::float * 100 as percentage from water_resources_ls_total
+group by landslide,total;
+
+
+---------------------------city parks-------------------------------
+create or replace view city_parks_vw as 
+select * from resilience_variables where asset_type = 'City Parks' ;
 
 create or replace view city_parks_fld_vw as 
 select * from resilience_variables where asset_type = 'City Parks' 
 and par_fl5yr_ = 'yes';
 
+create or replace view city_parks_flooded_total as
+select
+(select count(pinnum) from city_parks_fld_vw) as flooded,
+(select count(pinnum) from city_parks_vw) as total;
+
+create or replace view city_parks_fld_percentage as 
+select flooded, total, flooded/total::float * 100 as percentage from city_parks_flooded_total
+group by flooded,total;
+
 create or replace view city_parks_ls_vw as 
 select * from resilience_variables where asset_type = 'City Parks' 
 and par_ls_yn = 'yes';
+
+create or replace view city_parks_ls_total as
+select
+(select count(pinnum) from city_parks_ls_vw) as landslide,
+(select count(pinnum) from city_parks_vw) as total;
+
+create or replace view city_parks_ls_percentage as 
+select landslide, total, landslide/total::float * 100 as percentage from city_parks_ls_total
+group by landslide,total;
+
+
+
+-----------historic structures-------------------------------------------
+create or replace view historic_structures_all_vw as 
+select * from resilience_variables where asset_type = 'Historic Structure' ;
 
 create or replace view historic_structures_fld_vw as 
 select * from resilience_variables where asset_type = 'Historic Structure' 
 and par_fl5yr_ = 'yes';
 
+create or replace view historic_structures_flooded_total as
+select
+(select count(pinnum) from historic_structures_fld_vw) as flooded,
+(select count(pinnum) from historic_structures_all_vw) as total;
+
+create or replace view historic_structures_fld_percentage as 
+select flooded, total, flooded/total::float * 100 as percentage from historic_structures_flooded_total
+group by flooded,total;
+
 create or replace view historic_structures_ls_vw as 
 select * from resilience_variables where asset_type = 'Historic Structure' 
 and par_ls_yn = 'yes';
+
+create or replace view historic_structures_ls_total as
+select
+(select count(pinnum) from historic_structures_ls_vw) as landslide,
+(select count(pinnum) from historic_structures_all_vw) as total;
+
+create or replace view historic_structures_ls_percentage as 
+select landslide, total, landslide/total::float * 100 as percentage from historic_structures_ls_total
+group by landslide,total;
+
