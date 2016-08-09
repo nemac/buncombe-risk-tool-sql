@@ -73,3 +73,69 @@ set asset_type = b.asset_type
 from historic_district_define_vw as b 
 where a.pinnum = b.pinnum;
 
+create or replace view communications_fld_vw as 
+select * from resilience_variables where asset_type = 'Communications' 
+and par_fl5yr_ = 'yes';
+
+
+create or replace view communications_fld_vw as 
+select * from resilience_variables where asset_type = 'Communications' 
+and par_ls_yn = 'yes';
+
+
+create or replace view commercial_fld_vw as 
+select * from resilience_variables where asset_type = 'Commercial' 
+and par_fl5yr_ = 'yes';
+
+create or replace view commercial_fld_vw as 
+select * from resilience_variables where asset_type = 'Commercial' 
+and par_ls_yn = 'yes';
+
+create or replace view industrial_fld_vw  as 
+select * from resilience_variables where asset_type = 'Industrial' 
+and par_fl5yr_ = 'yes';
+
+create or replace view industrial_ls_vw as 
+select * from resilience_variables where asset_type = 'Industrial' 
+and par_ls_yn = 'yes';
+
+
+create or replace view energy_fld_vw as 
+select * from resilience_variables where asset_type = 'Energy' 
+and par_fl5yr_ = 'yes';
+
+create or replace view energy_ls_vw as 
+select * from resilience_variables where asset_type = 'Energy' 
+and par_ls_yn = 'yes';
+
+create or replace view emergency_services_fld_vw as 
+select * from resilience_variables where asset_type = 'Emerg Services' 
+and par_fl5yr_ = 'yes';
+
+create or replace view emergency_services_ls_vw as 
+select * from resilience_variables where asset_type = 'Emerg Services' 
+and par_ls_yn = 'yes';
+
+create or replace view water_resources_fld_vw as 
+select * from resilience_variables where asset_type = 'Water Resources' 
+and par_fl5yr_ = 'yes';
+
+create or replace view water_resources_ls_vw as 
+select * from resilience_variables where asset_type = 'Water Resources' 
+and par_ls_yn = 'yes';
+
+create or replace view city_parks_fld_vw as 
+select * from resilience_variables where asset_type = 'City Parks' 
+and par_fl5yr_ = 'yes';
+
+create or replace view city_parks_ls_vw as 
+select * from resilience_variables where asset_type = 'City Parks' 
+and par_ls_yn = 'yes';
+
+create or replace view historic_structures_fld_vw as 
+select * from resilience_variables where asset_type = 'Historic Structure' 
+and par_fl5yr_ = 'yes';
+
+create or replace view historic_structures_ls_vw as 
+select * from resilience_variables where asset_type = 'Historic Structure' 
+and par_ls_yn = 'yes';
