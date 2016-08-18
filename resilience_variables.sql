@@ -1,40 +1,12 @@
---This is the SQL to create the parcel variables  
--- Variable 	Description
--- Pinnum	Unique parcel id
--- cblock	census block
--- cbgroup	census block group
--- ctract	census tract
--- in_fld100	100 yr flood exposure
--- in _fld500	500 yr flood exposure
--- in_ls	Landslide exposure
--- totvalue	total parcel value
--- landvalue	parcel land value
--- bldvalue	parcel building value
--- landval_nrm	parcel land value normalized to acres of parcel
--- bldvalue_nrm	parcel building value normalized to building sq ft
--- acres	parcel acres
--- ownership	whether the parcel in owner_occupied, in_county, out_county
--- fldexposure	flood exposure
--- fldadatpcap	flood adaptive capacity
--- fldvuln	flood vulnerability
--- fldrisk	flood risk
--- lsexposure	landslide exposure
--- lsadatpcap	landslide adaptive capacity
--- lsvuln	landslide vulnerability
--- lsrisk	landslide risk
--- min_bld_year	minimum year built for parcel buildings
--- class	parcel class #
--- type	type of parcel (based on parcel class groupings)
--- bld_sqft	building sq footage 
--- lsexposure	landslide exposure ? 
--- lsadatpcap	landslide adaptive capacity ? 
--- lsvuln	landslide vulnerability ?
--- lsrisk	landslide risk ?
--- landval_nrm	parcel land value normalized to acres of parcel ?
--- bldvalue_nrm	parcel building value normalized to building sq ft ?
+-- Upload the required data for the analysis, census data outlines, property parcel dataset, building footprints fl1yr, fl5yr, debris_flow, wildfire
+-- update the geom of each parcel 
+update property_parcels 
+set geom = st_makevalid(geom);
 
+update building_footprints
+set geom = st_makevalid(geom)
 
-create table resilience_variables();
+create table resilience_variables()
 
 alter table resilience_variables
 add column pinnum character varying(50),
@@ -47,6 +19,7 @@ add column blockce10 character varying(4),
 add column blkgrpce character varying(1),
 add column blockgroup_geoid10 text;
 add column acreage numeric, 
+add column address text,
 add column ownership text,
 add column parcel_type text, 
 add column exposure_levels1 text,
@@ -64,12 +37,59 @@ add column sqft numeric,
 add column par_fl1yr_yn text,
 add column par_fl5yr_yn text,
 add column par_ls_yn text,
+add column par_wf_yn text,
 add column bldg_fl1yr_yn text,
 add column bldg_fl5yr_yn text,
-add column bldg_ls_yn text,
+add column bldg_ls_yn text
+add column bldg_wf_yn text,
 add column landval_nrm numeric,
 add column bldvalue_nrm numeric,
 add column geom geometry(multipolygon, 4326);
+
+
+insert into resilience_variables (pinnum)
+select pinnum
+from property_parcels;
+
+update resilience_variables as a
+set totalmarke = b.totalmarke
+from property_parcels as b
+where a.pinnum = b.pinnum;
+
+update resilience_variables as a
+set appraisedv = b.appraisedv 
+from property_parcels as b
+where a.pinnum = b.pinnum;
+
+update resilience_variables as a
+set taxvalue = b.taxvalue 
+from property_parcels as b
+where a.pinnum = b.pinnum;
+
+update resilience_variables as a
+set acreage = b.acreage 
+from property_parcels as b
+where a.pinnum = b.pinnum;
+
+update resilience_variables as a
+set class= b.class
+from property_parcels as b
+where a.pinnum = b.pinnum;
+
+update resilience_variables as a
+set geom = b.geom
+from property_parcels as b
+where a.pinnum = b.pinnum;
+
+update resilience_variables as a
+set year = b.year_built
+from year_built_commercial as b
+where a.pinnum = b.pinnum;
+
+update resilience_variables as a
+set year = b.year_built
+from year_built_residential as b
+where a.pinnum = b.pinnum;
 
 --The creation of the exposure levels and adaptive capacity data table
 --This process includes creating the tables intersecting of parcels and features within the 100 and 500 year floodplain
@@ -80,184 +100,175 @@ add column geom geometry(multipolygon, 4326);
 
 ---CREATE PARCELS IN DEBRIS FLOW VIEW BUILDINGS----------------
 
+--uncomment if you need to start fresh
+-- drop view if exists building_pinnum_vw cascade;
+-- drop view if exists parcels_fl1yr_vw cascade;
+-- drop view if exists parcels_fl5yr_vw cascade;
+-- drop view if exists parcel_ls_vw cascade;
+-- drop view if exists build_fl1yr_vw cascade;
+-- drop view if exists build_fl5yr_vw cascade;
+-- drop view if exists build_ls_vw cascade;
 
-drop table if exists building_pinnum_join cascade;
-drop table if exists parcels_fl1yr_tab cascade;
-drop table if exists parcels_fl5yr_tab cascade;
-drop table if exists parcel_ls_tab cascade;
-drop table if exists build_fl1yr_tab cascade;
-drop table if exists build_fl5yr_tab cascade;
-drop table if exists build_ls_tab cascade;
 
 
 ---^^^when starting a new database run this query first to clear out old data^^^--
 
-create table building_pinnum_join as
-SELECT a.pinnum as pin, b.geom 
-from property_4326 as a 
-join footprints_4326 as b on st_intersects(a.geom,b.geom)
+create or replace view building_pinnum_vw as
+SELECT a.pinnum as pinnum, b.geom 
+from property_parcels as a 
+join building_footprints as b on st_intersects(a.geom,b.geom)
 group by a.pinnum, b.geom;
 ---^^spatially join the buildings to parcel to associated the building features with a pinnum^^--
 
-
-
-CREATE table parcels_fl1yr_tab AS
-SELECT a.pinnum as pin, a.geom, sum(a.buildingva), a.class
-from property_4326 as a 
+CREATE or replace view parcels_fl1yr_vw AS
+SELECT a.pinnum as pinnum, a.geom, sum(a.buildingva), a.class
+from property_parcels as a 
 join fl1yr as b on st_intersects(a.geom,b.geom)
 group by a.pinnum, a.geom, a.class;
 --^^Intersect the parcels to the 100 year floodplain^^-----
 
-
-CREATE table parcels_fl5yr_tab AS
-SELECT a.pinnum as pin, a.geom, sum(a.buildingva), a.class
-from property_4326 as a 
+CREATE or replace view parcels_fl5yr_vw AS
+SELECT a.pinnum as pinnum, a.geom, sum(a.buildingva), a.class
+from property_parcels as a 
 join fl5yr as b on st_intersects(a.geom,b.geom)
 group by a.pinnum, a.geom, a.class;
 --^^Intersect the parcels to the 500 year floodplain^^-----
 
-CREATE table parcels_ls_tab AS
-SELECT a.pinnum as pin, a.geom, sum(a.buildingva), a.class
-from property_4326 as a 
+CREATE or replace view parcels_ls_vw AS
+SELECT a.pinnum as pinnum, a.geom, sum(a.buildingva), a.class
+from property_parcels as a 
 join debris_flow as b on st_intersects(a.geom,b.geom)
 group by a.pinnum, a.geom, a.class;
 
-CREATE table build_fl1yr_tab AS
-SELECT a.pin, a.geom
-from building_pinnum_join as a 
+CREATE or replace view parcels_wf_vw AS
+SELECT a.pinnum as pinnum, a.geom, sum(a.buildingva), a.class
+from property_parcels as a 
+join wildfire as b on st_intersects(a.geom,b.geom)
+group by a.pinnum, a.geom, a.class;
+
+
+CREATE or replace view build_fl1yr_vw AS
+SELECT a.pinnum, a.geom
+from building_pinnum_vw as a 
 join fl1yr as b on st_intersects(a.geom,b.geom)
-group by a.pin, a.geom;
+group by a.pinnum, a.geom;
 --****2275472 ms to run****--
 --^^Intersect the building footprints to the 100 year floodplain^^-----
 
-CREATE table build_fl5yr_tab AS
-SELECT a.pin as pin, a.geom
-from building_pinnum_join as a 
+CREATE or replace view build_fl5yr_vw AS
+SELECT a.pinnum as pinnum, a.geom
+from building_pinnum_vw as a 
 join fl5yr as b on st_intersects(a.geom,b.geom)
-group by a.pin, a.geom;
+group by a.pinnum, a.geom;
 --****>7000000****-----
 ---^^Intersect the building footprints to the 500 year floodplain^^-------
 
-CREATE table build_ls_tab AS
-SELECT a.pin as pin, a.geom
-from building_pinnum_join as a 
-join debris as b on st_intersects(a.geom,b.geom)
-group by a.pin, a.geom;
+CREATE or replace view build_ls_vw AS
+SELECT a.pinnum as pinnum, a.geom
+from building_pinnum_vw as a 
+join debris_flow as b on st_intersects(a.geom,b.geom)
+group by a.pinnum, a.geom;
+
+create or replace view build_wf_vw as 
+SELECT a.pinnum as pinnum, a.geom
+from building_pinnum_vw as a 
+join wildfire as b on st_intersects(a.geom,b.geom)
+group by a.pinnum, a.geom;
 
 
 ------Join fields that will be used for the vulnerability rankings-------
 
 ---Parcels within 100 year flood plain attribute gathering----------
 
-create or replace view parcels_fl1yr_vw as
-select * from parcels_fl1yr_tab;
-
 create or replace view par_fl1yr_yn as 
-select a.pin, (case when a.pin = b.pin then 'yes' else 
-null end) as yes_no from parcels_fl1yr_vw as a, parcels_fl1yr_tab as b 
-where a.pin= b.pin;
+select a.pinnum, (case when a.pinnum = b.pinnum then 'yes' else 
+null end) as yes_no from parcels_fl1yr_vw as a, property_parcels as b 
+where a.pinnum= b.pinnum;
 
 create or replace view build_par_fl1yr_yn as 
-select a.pin, (case when a.pin = b.pin then 'yes' else 
-null end) as yes_no from build_fl1yr_tab as a, parcels_fl1yr_tab as b 
-where a.pin= b.pin
-
-alter table parcels_fl1yr_tab
-add column bldg_fl1yr_yn text,
-add column year_built numeric;
-
-update parcels_fl1yr_tab as a
-set year_built = b.year_built 
-from year_built_com as b 
-where a.pin = b.pinnum;
-
-update parcels_fl1yr_tab as a
-set year_built = b.year_built 
-from year_built_res as b 
-where a.pin = b.pinnum; 
-
-update parcels_fl1yr_tab as a 
-set bldg_fl1yr_yn = b.yes_no 
-from build_par_fl1yr_yn as b
-where a.pin = b.pin
-
+select a.pinnum, (case when a.pinnum = b.pinnum then 'yes' else 
+null end) as yes_no from build_fl1yr_vw as a, property_parcels as b 
+where a.pinnum= b.pinnum;
 
 ---Parcels within 500 year flood plain attribute gathering----------
-create or replace view parcels_fl5yr_vw as
-select * from parcels_fl5yr_tab;
 
 create or replace view par_fl5yr_yn as 
-select a.pin, (case when a.pin = b.pin then 'yes' else 
-null end) as yes_no from parcels_fl5yr_vw as a, parcels_fl5yr_tab as b 
-where a.pin= b.pin;  
+select a.pinnum, (case when a.pinnum = b.pinnum then 'yes' else 
+null end) as yes_no from parcels_fl5yr_vw as a, property_parcels as b 
+where a.pinnum= b.pinnum; 
 
 create or replace view build_par_fl5yr_yn as 
-select a.pin, (case when a.pin = b.pin then 'yes' else 
-null end) as yes_no from build_fl5yr_tab as a, parcels_fl5yr_tab as b 
-where a.pin= b.pin
+select a.pinnum, (case when a.pinnum = b.pinnum then 'yes' else 
+null end) as yes_no from build_fl5yr_vw as a, parcels_fl5yr_vw as b 
+where a.pinnum= b.pinnum;
 
-alter table parcels_fl5yr_tab 
-add column bldg_fl5yr_yn text,
-add column year_built numeric;
-
-update parcels_fl5yr_tab as a
-set year_built = b.year_built 
-from year_built_com as b 
-where a.pin = b.pinnum;
-
-update parcels_fl5yr_tab as a
-set year_built = b.year_built 
-from year_built_res as b 
-where a.pin = b.pinnum; 
-
-update parcels_fl5yr_tab as a 
-set bldg_fl5yr_yn = b.yes_no 
-from build_par_fl5yr_yn as b
-where a.pin = b.pin;
-
-update parcels_fl1yr_tab as a
-set year_built  =  b.year_built
-from year_built_com as b
-where a.pin = b.pinnum;
-
-update parcels_fl1yr_tab as a
-set year_built  =  b.year_built
-from year_built_res as b
-where a.pin = b.pinnum;
 
 ---Parcels within debris flow attribute gathering----------
-create or replace view parcels_ls_vw as
-select * from parcels_ls_tab;
 
 create or replace view par_ls_yn as 
-select a.pin, (case when a.pin = b.pin then 'yes' else 
-null end) as yes_no from parcels_ls_vw as a, parcels_ls_tab as b 
-where a.pin= b.pin;  
+select a.pinnum, (case when a.pinnum = b.pinnum then 'yes' else 
+null end) as yes_no from parcels_ls_vw as a, property_parcels as b 
+where a.pinnum= b.pinnum; 
 
 create or replace view build_par_ls_yn as 
-select a.pin, (case when a.pin = b.pin then 'yes' else 
-null end) as yes_no from build_ls_tab as a, parcels_ls_tab as b 
-where a.pin= b.pin
-
-alter table parcels_ls_tab 
-add column bldg_ls_yn text;
+select a.pinnum, (case when a.pinnum = b.pinnum then 'yes' else 
+null end) as yes_no from build_ls_vw as a, parcels_ls_vw as b 
+where a.pinnum= b.pinnum;
 
 
-update parcels_ls_tab as a
-set year_built = b.year_built 
-from year_built_com as b 
-where a.pin = b.pinnum;
+---parcels within the wildfire attribute--------
+create or replace view par_wf_yn as 
+select a.pinnum, (case when a.pinnum = b.pinnum then 'yes' else 
+null end) as yes_no from parcels_wf_vw as a, property_parcels as b 
+where a.pinnum= b.pinnum; 
 
-update parcels_ls_tab as a
-set year_built = b.year_built 
-from year_built_res as b 
-where a.pin = b.pinnum; 
+create or replace view build_par_wf_yn as 
+select a.pinnum, (case when a.pinnum = b.pinnum then 'yes' else 
+null end) as yes_no from build_wf_vw as a, parcels_wf_vw as b 
+where a.pinnum= b.pinnum;
 
-update parcels_ls_tab as a
+------update the resilience variables table----------------
+
+
+update resilience_variables as a 
+set bldg_fl1yr_yn = b.yes_no 
+from build_par_fl1yr_yn as b
+where a.pinnum = b.pinnum ;
+
+update resilience_variables as a 
+set bldg_fl5yr_yn = b.yes_no 
+from build_par_fl5yr_yn as b
+where a.pinnum = b.pinnum ;
+
+update resilience_variables as a 
 set bldg_ls_yn = b.yes_no 
 from build_par_ls_yn as b
-where a.pin = b.pin;
+where a.pinnum = b.pinnum;
 
+update resilience_variables as a 
+set bldg_wf_yn = b.yes_no
+from build_par_wf_yn as b
+where a.pinnum = b.pinnum;
+
+update resilience_variables as a
+set par_fl1yr_yn = b.yes_no
+from par_fl1yr_yn as b
+where a.pinnum = b.pinnum;
+
+update resilience_variables as a
+set par_fl5yr_yn = b.yes_no
+from par_fl5yr_yn as b
+where a.pinnum = b.pinnum;
+
+update resilience_variables as a
+set par_ls_yn = b.yes_no
+from par_ls_yn as b
+where a.pinnum = b.pinnum;
+
+update resilience_variables as a
+set par_wf_yn = b.yes_no
+from par_wf_yn as b
+where a.pinnum = b.pinnum;
 --------Begin the creation of the vulerability ranks of 1-9 given the exposure and adaptive capcity metrics-------------
 
 
@@ -267,13 +278,8 @@ where a.pin = b.pin;
 
 
 -----Parcels within the 100 year floodplain exposure, adaptive apacity and vulnerability metric------------------
-alter table parcels_fl1yr_tab 
-add column exposure_levels text,
-add column adcap_levels text,
-add column vuln_levels text;
-
 create or replace view fl1yr_exposure as 
-select a.pin, 
+select a.pinnum, 
 (case
 when bldg_fl1yr_yn is null then 'Low'
 when bldg_fl1yr_yn = 'yes' 
@@ -284,7 +290,7 @@ and class != '180'
 then 'Med' 
 else 'High' 
 END) as exposure_levels,
-a.geom from parcels_fl1yr_tab as a
+a.geom from parcels_fl1yr_vw as a
 where 
 class = '100' 
 or class < '200' 
@@ -292,50 +298,33 @@ or class = '411'
 or class = '416' 
 or class = '635';
 
-
-update parcels_fl1yr_tab as a
-set exposure_levels = b.exposure_levels 
-from fl1yr_exposure as b 
-where a.pin = b.pin;
-
 create or replace view fl1yr_adcap as 
-select a.pin, 
+select a.pinnum, 
 (case 
 when a.year_built < 1981 and sum < 120000 then 'Low'
 when a.year_built < 1981 and sum > 120000 then 'Med'
 when a.year_built > 1981 and sum < 120000 then 'Med'
 when a.year_built > 1981 and sum > 120000 then 'High' 
 else null END) as adcap_levels,
-a.geom from parcels_fl1yr_tab as a;
-
-update parcels_fl1yr_tab as a
-set adcap_levels = b.adcap_levels 
-from fl1yr_adcap as b 
-where a.pin = b.pin;
-
+a.geom from parcels_fl1yr_vw as a;
 
 create or replace view fl1yr_vuln as 
-select a.pin, 
+select a.pinnum, 
 (case 
-when exposure_levels = 'Low' and adcap_levels = 'High'  then '1'
-when exposure_levels = 'Med' and adcap_levels = 'High'  then '2'
-when exposure_levels = 'Low' and adcap_levels = 'Med'  then '2'
-when exposure_levels = 'High' and adcap_levels = 'High'  then '3'
+when exposure_levels = 'Low' and adcap_levels = 'High' then '1'
+when exposure_levels = 'Med' and adcap_levels = 'High' then '2'
+when exposure_levels = 'Low' and adcap_levels = 'Med' then '2'
+when exposure_levels = 'High' and adcap_levels = 'High' then '3'
 when exposure_levels = 'Low' and adcap_levels = 'Low' then '3'
-when exposure_levels = 'Med' and adcap_levels = 'Med'  then '4'
-when exposure_levels = 'Med' and adcap_levels = 'Low'  then '6'
-when exposure_levels = 'High' and adcap_levels = 'Med'  then '6'
-when exposure_levels = 'High' and adcap_levels = 'Low'  then '9'
-ELSE 'Not enough data' END) as vuln_levels, a.geom from parcels_fl1yr_tab as a;
-
-update parcels_fl1yr_tab as a
-set vuln_levels = b.vuln_levels 
-from fl1yr_vuln as b 
-where a.pin = b.pin;
+when exposure_levels = 'Med' and adcap_levels = 'Med' then '4'
+when exposure_levels = 'Med' and adcap_levels = 'Low' then '6'
+when exposure_levels = 'High' and adcap_levels = 'Med' then '6'
+when exposure_levels = 'High' and adcap_levels = 'Low' then '9'
+ELSE 'Not enough data' END) as vuln_levels, a.geom from parcels_fl1yr_vw as a;
 
 -----Parcels within the 500 year floodplain exposure, adaptive apacity and vulnerability metric------------------
 create or replace view fl5yr_exposure as 
-select a.pin, a.class,
+select a.pinnum, a.class,
 (case
 when bldg_fl5yr_yn is null then 'Low'
 when bldg_fl5yr_yn = 'yes' 
@@ -346,7 +335,7 @@ and class != '180'
 then 'Med' 
 else 'High' 
 END) as exposure_levels,
-a.geom from parcels_fl5yr_tab as a
+a.geom from parcels_fl5yr_vw as a
 where 
 class = '100' 
 or class < '200' 
@@ -354,49 +343,34 @@ or class = '411'
 or class = '416' 
 or class = '635';
 
-update parcels_fl5yr_tab as a
-set exposure_levels = b.exposure_levels 
-from fl5yr_exposure as b 
-where a.pin = b.pin;
-
 create or replace view fl5yr_adcap as 
-select a.pin, 
+select a.pinnum, 
 (case 
 when a.year_built < 1981 and sum < 120000 then 'Low'
 when a.year_built < 1981 and sum > 120000 then 'Med'
 when a.year_built > 1981 and sum > 120000 then 'High' 
 else null END) as adcap_levels,
-a.geom from parcels_fl5yr_tab as a;
-
-update parcels_fl5yr_tab as a
-set adcap_levels = b.adcap_levels 
-from fl5yr_adcap as b 
-where a.pin = b.pin;
-
+a.geom from parcels_fl5yr_vw as a;
 
 create or replace view fl5yr_vuln as 
-select a.pin, 
+select a.pinnum, 
 (case 
 when exposure_levels = 'Low' and adcap_levels = 'Low' then '1'
-when exposure_levels = 'Low' and adcap_levels = 'Med'  then '2'
-when exposure_levels = 'Low' and adcap_levels = 'High'  then '3'
-when exposure_levels = 'Med' and adcap_levels = 'Low'  then '4'
-when exposure_levels = 'Med' and adcap_levels = 'Med'  then '5'
-when exposure_levels = 'Med' and adcap_levels = 'High'  then '6'
-when exposure_levels = 'High' and adcap_levels = 'Low'  then '7'
-when exposure_levels = 'High' and adcap_levels = 'Med'  then '8'
-when exposure_levels = 'High' and adcap_levels = 'High'  then '9'
-ELSE 'Not enough data' END) as vuln_levels, a.geom from parcels_fl5yr_tab as a;
+when exposure_levels = 'Low' and adcap_levels = 'Med' then '2'
+when exposure_levels = 'Low' and adcap_levels = 'High' then '3'
+when exposure_levels = 'Med' and adcap_levels = 'Low' then '4'
+when exposure_levels = 'Med' and adcap_levels = 'Med' then '5'
+when exposure_levels = 'Med' and adcap_levels = 'High' then '6'
+when exposure_levels = 'High' and adcap_levels = 'Low' then '7'
+when exposure_levels = 'High' and adcap_levels = 'Med' then '8'
+when exposure_levels = 'High' and adcap_levels = 'High' then '9'
+ELSE 'Not enough data' END) as vuln_levels, a.geom from parcels_fl5yr_vw as a;
 
-update parcels_fl5yr_tab as a
-set vuln_levels = b.vuln_levels 
-from fl5yr_vuln as b 
-where a.pin = b.pin;
 
 -----Parcels within the landslided debris exposure, adaptive apacity and vulnerability metric------------------
 
 create or replace view ls_exposure as 
-select a.pin, a.class,
+select a.pinnum, a.class,
 (case
 when bldg_ls_yn is null then 'Low'
 when bldg_ls_yn = 'yes' 
@@ -407,62 +381,94 @@ and class != '180'
 then 'Med' 
 else 'High' 
 END) as exposure_levels,
-a.geom from parcels_ls_tab as a
+a.geom from parcels_ls_vw as a
 where 
 class = '100' 
 or class < '200' 
 or class = '411'
 or class = '416';
 
-update parcels_ls_tab as a
-set exposure_levels = b.exposure_levels 
-from ls_exposure as b 
-where a.pin = b.pin;
 
 create or replace view ls_adcap as 
-select a.pin, 
+select a.pinnum, 
 (case 
 when a.year_built < 1981 and sum < 120000 then 'Low'
 when a.year_built < 1981 and sum > 120000 then 'Med'
 when a.year_built > 1981 and sum > 120000 then 'High' 
 else null END) as adcap_levels,
-a.geom from parcels_ls_tab as a;
-
-update parcels_ls_tab as a
-set adcap_levels = b.adcap_levels 
-from ls_adcap as b 
-where a.pin = b.pin;
-
+a.geom from parcels_ls_vw as a;
 
 create or replace view ls_vuln as 
-select a.pin, 
+select a.pinnum, 
 (case 
 when exposure_levels = 'Low' and adcap_levels = 'Low' then '1'
-when exposure_levels = 'Low' and adcap_levels = 'Med'  then '2'
-when exposure_levels = 'Low' and adcap_levels = 'High'  then '3'
-when exposure_levels = 'Med' and adcap_levels = 'Low'  then '4'
-when exposure_levels = 'Med' and adcap_levels = 'Med'  then '5'
-when exposure_levels = 'Med' and adcap_levels = 'High'  then '6'
-when exposure_levels = 'High' and adcap_levels = 'Low'  then '7'
-when exposure_levels = 'High' and adcap_levels = 'Med'  then '8'
-when exposure_levels = 'High' and adcap_levels = 'High'  then '9'
-ELSE 'Not enough data' END) as vuln_levels, a.geom from parcels_ls_tab as a;
+when exposure_levels = 'Low' and adcap_levels = 'Med' then '2'
+when exposure_levels = 'Low' and adcap_levels = 'High' then '3'
+when exposure_levels = 'Med' and adcap_levels = 'Low' then '4'
+when exposure_levels = 'Med' and adcap_levels = 'Med' then '5'
+when exposure_levels = 'Med' and adcap_levels = 'High' then '6'
+when exposure_levels = 'High' and adcap_levels = 'Low' then '7'
+when exposure_levels = 'High' and adcap_levels = 'Med' then '8'
+when exposure_levels = 'High' and adcap_levels = 'High' then '9'
+ELSE 'Not enough data' END) as vuln_levels, a.geom from parcels_ls_vw as a;
 
-update parcels_ls_tab as a
-set vuln_levels = b.vuln_levels 
-from ls_vuln as b 
-where a.pin = b.pin;
+update resilience_variables as a
+set exposure_levels1 = b.exposure_levels 
+from parcels_fl1yr_vw as b
+where a.pinnum = b.pinnum;
+
+update resilience_variables as a
+set adcap_levels1 = b.adcap_levels
+from parcels_fl1yr_vw as b
+where a.pinnum = b.pinnum;
+
+update resilience_variables as a
+set vuln_levels1 = b.vuln_levels 
+from parcels_fl1yr_vw as b
+where a.pinnum = b.pinnum;
+
+update resilience_variables as a
+set exposure_levels5 = b.exposure_levels 
+from parcels_fl5yr_vw as b
+where a.pinnum = b.pinnum;
+
+update resilience_variables as a
+set adcap_levels5 = b.adcap_levels
+from parcels_fl5yr_vw as b
+where a.pinnum = b.pinnum;
+
+update resilience_variables as a
+set vuln_levels5 = b.vuln_levels 
+from parcels_fl5yr_vw as b
+where a.pinnum = b.pinnum;
+
+update resilience_variables as a
+set exposure_levels_ls = b.exposure_levels
+from parcels_ls_vw as b
+where a.pinnum = b.pinnum; 
+
+update resilience_variables as a
+set adcap_levels_ls = b.adcap_levels
+from parcels_ls_vw as b
+where a.pinnum = b.pinnum; 
+
+update resilience_variables as a
+set vuln_levels_ls = b.vuln_levels
+from parcels_ls_vw as b
+where a.pinnum = b.pinnum; 
+
+
 
 ------------------------------Start of census information to determine exposure-------------------------------------------------------
 --select substring(geoid10,1,12) as blockgroup_geoid from nc_cblock
 
-drop view if exists property_centroid cascade; 
+--drop view if exists property_centroid cascade; 
 
 create or replace view property_centroid as
 select a.gid, a.pinnum, st_centroid(a.geom)::geometry(point,4326) as geom, a.landvalue as lv, a.buildingva as bv, a.appraisedv as ap 
-,a.acreage,a.class from property_4326 as a
+,a.acreage,a.class from property_parcels as a
 
-create table census_parcel as 
+create table census_parcel_vw as 
 select b.gid, a.pinnum, b.tractce10, substring(b.geoid10,1,12) as blockgroup_geoid10, b.blockce10, 
 a.lv, a.bv, a.ap,
 a.acreage, a.class, b.geom
@@ -479,7 +485,22 @@ sum(acreage) as acreage, geom
 from census_parcel 
 group by gid, blockce10, geom;
 
-create table parcel_type as
+update resilience_variables as a
+set blockce10 = b.blockce10
+from census_parcel_vw as b
+where a.pinnum = b.pinnum;
+
+update resilience_variables as a
+set blockgroup_geoid10 = b.blockgroup_geoid10
+from census_parcel_vw as b
+where a.pinnum = b.pinnum;
+
+update resilience_variables as a
+set tractce = b.tractce10
+from census_parcel_vw as b
+where a.pinnum = b.pinnum; 
+
+create or replace view parcel_type_vw as
 select gid, pinnum, (CASE WHEN class >= '100' AND class < '200' THEN 'Residential'
 WHEN class = '411' THEN 'Residential'
 WHEN class = '416' THEN 'Residential'
@@ -496,400 +517,62 @@ WHEN class >= '700' AND class < '800' THEN 'Industrial'
 WHEN class >= '800' AND class < '900' THEN 'State Assessed/Utilities'
 WHEN class >= '900' AND class < '1000' THEN 'Conserved Area/Park'
 ELSE 'Unclassified' END) as type, geom
-from property_4326;
+from property_parcels;
 
-create table ownership as 
+update resilience_variables as a
+set parcel_type = b.type
+from parcel_type_vw as b
+where a.pinnum = b.pinnum;
+
+create or replace view ownership_vw as 
 select gid, pinnum,
 (CASE
-            WHEN ((((property_4326.housenumbe::text || ' '::text) || property_4326.streetname::text) || ' '::text) || property_4326.streettype::text) = property_4326.address::text THEN 'owner_residence'::text
-            WHEN property_4326.state::text <> 'NC'::text THEN 'out_of_state'::text
-            WHEN property_4326.zipcode::text = ANY ('{28806,28804,28801,28778,28748,28715,28803,28704,28732,28730,28711,28709,28787,28805,28701}'::text[]) THEN 'in_county'::text
-            ELSE 'in_state'::text
-        END) AS ownership, 
-        geom
-from property_4326
+ WHEN ((((property_parcels.housenumbe::text || ' '::text) || property_parcels.streetname::text) || ' '::text) || property_parcels.streettype::text) = property_parcels.address::text THEN 'owner_residence'::text
+ WHEN property_parcels.state::text <> 'NC'::text THEN 'out_of_state'::text
+ WHEN property_parcels.zipcode::text = ANY ('{28806,28804,28801,28778,28748,28715,28803,28704,28732,28730,28711,28709,28787,28805,28701}'::text[]) THEN 'in_county'::text
+ ELSE 'in_state'::text
+ END) AS ownership, 
+ geom
+from property_parcels
 
-create table ownership_residential as 
+create or replace view ownership_residential as 
 select gid, pinnum, class,
 (CASE
-            WHEN ((((property_4326.housenumbe::text || ' '::text) || property_4326.streetname::text) || ' '::text) || property_4326.streettype::text) = property_4326.address::text THEN 'owner_residence'::text
-            WHEN property_4326.state::text <> 'NC'::text THEN 'out_of_state'::text
-            WHEN property_4326.zipcode::text = ANY ('{28806,28804,28801,28778,28748,28715,28803,28704,28732,28730,28711,28709,28787,28805,28701}'::text[]) THEN 'in_county'::text
-            ELSE 'in_state'::text
-        END) AS ownership, 
-        geom
-from property_4326
+ WHEN ((((property_parcels.housenumbe::text || ' '::text) || property_parcels.streetname::text) || ' '::text) || property_parcels.streettype::text) = property_parcels.address::text THEN 'owner_residence'::text
+ WHEN property_parcels.state::text <> 'NC'::text THEN 'out_of_state'::text
+ WHEN property_parcels.zipcode::text = ANY ('{28806,28804,28801,28778,28748,28715,28803,28704,28732,28730,28711,28709,28787,28805,28701}'::text[]) THEN 'in_county'::text
+ ELSE 'in_state'::text
+ END) AS ownership, 
+ geom
+from property_parcels
 where
 class >= '100' and class < '200' 
 or class = '416' 
 or class = '411'
 or class = '635';
 
-create or replace view landval_nrm as
-select a.pinnum, (case when landvalue = null or acreage = 0 then null 
-	else a.landvalue / a.acreage end) as landval_nrm 
-	 from property_4326 as a
-
-create or replace view bldvalue_nrm as 
-select a.pinnum, (case when buildingva = null or sqft = 0 then null
-		  else a.buildingva / a.sqft end) as bldvalue_nrm
-		  from building_val_sqft
-
 
 update resilience_variables as a
-set blockce10  =  b.blockce10
-from census_parcel as b
-where a.pinnum = b.pinnum;
-
-update resilience_variables as a
-set blockgroup_geoid10  =  b.blockgroup_geoid10
-from census_parcel as b
-where a.pinnum = b.pinnum;
-
-update resilience_variables as a
-set tractce  =  b.tractce10
-from census_parcel as b
-where a.pinnum = b.pinnum; 
-
-update resilience_variables as a
-set totalmarke =  b.totalmarke
-from property_4326 as b
-where a.pinnum = b.pinnum;
-
-update resilience_variables as a
-set appraisedv =  b.appraisedv 
-from property_4326 as b
-where a.pinnum = b.pinnum;
-
-update resilience_variables as a
-set taxvalue  =  b.taxvalue 
-from property_4326 as b
-where a.pinnum = b.pinnum;
-
-update resilience_variables as a
-set acreage  =  b.acreage 
-from property_4326 as b
-where a.pinnum = b.pinnum;
-
---12370 what is classed?
-
-update resilience_variables as a
-set class=  b.class
-from property_4326 as b
-where a.pinnum = b.pinnum;
-
-update resilience_variables as a
-set par_fl1yr_yn  =  b.yes_no
-from par_fl1yr_yn as b
-where a.pinnum = b.pin;
-
-update resilience_variables as a
-set  ownership =  b.ownership
+set ownership_vw = b.ownership
 from ownership as b
 where a.pinnum = b.pinnum;
 
-update resilience_variables as a
-set exposure_levels1  =  b.exposure_levels 
-from parcels_fl1yr_tab as b
-where a.pinnum = b.pin;
+create or replace view landval_nrm as
+select a.pinnum, (case when landvalue = null or acreage = 0 then null 
+	else a.landvalue / a.acreage end) as landval_nrm 
+	from property_parcels as a
+
+create or replace view bldvalue_nrm as 
+select a.pinnum, (case when buildingva = null or sqft = 0 then null
+	else a.buildingva / a.sqft end) as bldvalue_nrm
+	from building_val_sqft
 
 update resilience_variables as a
-set adcap_levels1  =  b.adcap_levels
-from parcels_fl1yr_tab as b
-where a.pinnum = b.pin;
-
-update resilience_variables as a
-set vuln_levels1  =  b.vuln_levels 
-from parcels_fl1yr_tab as b
-where a.pinnum = b.pin;
-
-update resilience_variables as a
-set exposure_levels5  =  b.exposure_levels 
-from parcels_fl5yr_tab as b
-where a.pinnum = b.pin;
-
-update resilience_variables as a
-set adcap_levels5  =  b.adcap_levels
-from parcels_fl5yr_tab as b
-where a.pinnum = b.pin;
-
-update resilience_variables as a
-set vuln_levels5  =  b.vuln_levels 
-from parcels_fl5yr_tab as b
-where a.pinnum = b.pin;
-
-update resilience_variables as a
-set exposure_levels_ls =  b.exposure_levels
-from parcels_ls_tab as b
-where a.pinnum = b.pin; 
-
-update resilience_variables as a
-set adcap_levels_ls  =  b.adcap_levels
-from parcels_ls_tab as b
-where a.pinnum = b.pin; 
-
-update resilience_variables as a
-set vuln_levels_ls  =  b.vuln_levels
-from parcels_ls_tab as b
-where a.pinnum = b.pin; 
-
-update resilience_variables as a
-set year  =  b.year_built
-from year_built_com as b
-where a.pinnum = b.pinnum;
-
-update resilience_variables as a
-set year  =  b.year_built
-from year_built_res as b
-where a.pinnum = b.pinnum;
-
-update resilience_variables as a
-set sqft =  b.sum 
-from build_sqft_group_pinnum as b
-where a.pinnum = b.pinnum;
-
-update resilience_variables as a
-set landval_nrm  =  b.landval_nrm
+set landval_nrm = b.landval_nrm
 from landval_nrm as b
 where a.pinnum = b.pinnum;
 
 update resilience_variables as a
-set bldvalue_nrm =  b.bldvalue_nrm 
+set bldvalue_nrm = b.bldvalue_nrm 
 from bldvalue_nrm as b
 where a.pinnum = b.pinnum;
-
-update resilience_variables as a
-set parcel_type  =  b.type
-from parcel_type as b
-where a.pinnum = b.pinnum;
-
-update resilience_variables as a 
-set bldg_fl1yr_yn = b.bldg_fl1yr_yn 
-from parcels_fl1yr_tab as b
-where a.pinnum = b.pin 
-
-update resilience_variables as a 
-set bldg_fl5yr_yn = b.bldg_fl5yr_yn 
-from parcels_fl5yr_tab as b
-where a.pinnum = b.pin 
-
-update resilience_variables as a 
-set bldg_ls_yn = b.bldg_ls_yn 
-from parcels_ls_tab as b
-where a.pinnum = b.pin;
-
-update resilience_variables as a
-set par_ls_yn  =  b.yes_no
-from par_ls_yn as b
-where a.pinnum = b.pin;
-
-update resilience_variables as a
-set geom  =  b.geom
-from property_4326 as b
-where a.pinnum = b.pinnum;
-
-
-update resilience_variables 
-set geom = st_makevalid(geom);drop view emergency_services_fld_cbg cascade;
-drop view historic_stuctures_fld_cbg cascade;
-drop view coa_parks_fld_cbg cascade;
-drop view coa_parcels_fld_cbg cascade;
-drop view commercial_properties_fld_cbg cascade;
-
-----------------emergency services analysis---------------
-
-create or replace view emergency_services_all as 
-select * from resilience_variables where class = '662' 
-OR class = '640' 
-OR class = '641' 
-OR class = '642';
-
-create or replace view emergency_services as 
-select * from resilience_variables where par_fl5yr_ = 'yes' 
-AND (class = '662' OR class = '640' OR class = '641' OR class = '642');
-
-create or replace view emergency_services_fld_cbg as 
-select a.gid, a.pinnum, st_centroid(a.geom)::geometry(point,4326) as geom from emergency_services as a
-join coa_census_block_groups as b
-on st_intersects(a.geom, b.geom);
-
----------historic landmark analysis-----------------------
-create or replace view fl5yr_histroic_structures as 
-select a.* from historic_landmarks_register_properties_point as a
-join fl5yr as b 
-on st_intersects(a.geom, b.geom);
-
-create or replace view histroic_structures_yn_fl5yr as 
-select a.gid, (case when a.gid = b.gid then 'yes' else 
-null end) as yes_no from fl5yr_histroic_structures as a, historic_landmarks_register_properties_point as b 
-where a.gid= b.gid;
-
-update historic_landmarks_register_properties_point as a 
-set fl5yr = b.yes_no 
-from histroic_structures_yn_fl5yr as b
-where a.gid = b.gid;
-
-create or replace view historic_stuctures as 
-select * from historic_landmarks_register_properties_point where fl5yr = 'yes';
-
-create or replace view historic_stuctures_fld_cbg as 
-select a.gid, a.name, st_centroid(a.geom)::geometry(point,4326) from historic_stuctures as a
-join coa_census_block_groups as b
-on st_intersects(a.geom, b.geom);
-
-
--------------coa parks analysis-------------------------------
-
-create or replace view coa_parks_vw as 
-select * from coa_parks where fld_exp = 'Yes';
-
-create or replace view coa_parks_fld_cbg as 
-select a.gid, a.parkname, st_centroid(a.geom)::geometry(point,4326) from coa_parks_vw as a
-join coa_census_block_groups as b
-on st_intersects(a.geom, b.geom);
-
-
-
--------coa parcels analysis------------
-
-create or replace view coa_parcels_vw as 
-select * from coa_parcels where fld_exp = 'Yes';
-
-create or replace view coa_parcels_fld_cbg as 
-select a.gid, a.pinnum, st_centroid(a.geom)::geometry(point,4326) from coa_parcels_vw as a
-join coa_census_block_groups as b
-on st_intersects(a.geom, b.geom);
-
--------commercial parcels analysis---------
-
-create or replace view commercial_properties_all as 
-select * from resilience_variables where 
-(class >= '400' AND class < '411') OR (class >= '412' and class < '416') 
- OR (class >= '417' and class < '500') OR (class >= '700' and class < '800');
-
-create or replace view commercial_properties as 
-select * from commercial_properties_all where par_fl5yr_ = 'yes';
-
-create or replace view commercial_properties_fld_cbg as 
-select a.gid, a.pinnum, st_centroid(a.geom)::geometry(point,4326) from commercial_properties as a
-join coa_census_block_groups as b
-on st_intersects(a.geom, b.geom);
-
-
------residential parcel analysis----------
-create or replace view residential_parcels_all as 
-select * from resilience_variables
-where parcel_typ = 'Residential';
-
-create or replace view residential_parcels as
- select * from resilience_variables 
- where parcel_typ = 'Residential' and 
- par_fl5yr_ = 'yes';
-
-create or replace view residential_fld_cbg as 
-select a.gid, a.pinnum, st_centroid(a.geom)::geometry(point,4326) as geom 
-from residential_parcels as a
-join coa_census_block_groups as b
-on st_intersects(a.geom, b.geom);
-
-
---------emergency----------
-create or replace view emergency_services_flooded_total as
-select
-(select count(gid) from emergency_services_fld_cbg) as flooded,
-(select count(gid) from emergency_services_all) as total;
-
-create or replace view emergency_services_percentage as 
-select flooded, total, flooded/total::float * 100 as percentage from emergency_services_flooded_total
-group by flooded,total;
-
-
------historic-------
-create or replace view historic_flooded_total as
-select
-(select count(gid) from historic_stuctures_fld_cbg ) as flooded,
-(select count(gid) from historic_landmarks_register_properties_point) as total;
-
-create or replace view historic_services_percentage as 
-select flooded, total, flooded/total::float * 100 as percentage from historic_flooded_total
-group by flooded,total;
-
-
----coa parks-------
-
-create or replace view coa_parks_flooded_total as
-select
-(select count(gid) from coa_parks_fld_cbg) as flooded,
-(select count(gid) from coa_parks) as total;
-
-create or replace view coa_parks_percentage as 
-select flooded, total, flooded/total::float * 100 as percentage from coa_parks_flooded_total
-group by flooded,total;
-
-
----coa parcles------
-
-create or replace view coa_parcels_flooded_total as
-select
-(select count(gid) from coa_parcels_fld_cbg) as flooded,
-(select count(gid) from coa_parcels) as total;
-
-create or replace view coa_parcels_percentage as 
-select flooded, total, flooded/total::float * 100 as percentage from coa_parcels_flooded_total
-group by flooded,total;
-
-
----commercial properties-------
-create or replace view commercial_flooded_total as
-select
-(select count(gid) from commercial_properties_fld_cbg) as flooded,
-(select count(gid) from commercial_properties_all) as total;
-
-create or replace view commercial_percentage as 
-select flooded, total, flooded/total::float * 100 as percentage from commercial_flooded_total
-group by flooded,total;
-
-
-
------residential------------------
-create or replace view residential_flooded_total as
-select
-(select count(gid) from residential_fld_cbg) as flooded,
-(select count(gid) from residential_parcels_all) as total;
-
-
-create or replace view residential_percentage as 
-select flooded, total, flooded/total::float * 100 as percentage from residential_flooded_total
-group by flooded,total;
-
-create or replace view flood_percentages as 
-select * from historic_services_percentage
-union all
-select * from emergency_services_percentage 
-union all 
-select * from coa_parks_percentage
-union all 
-select * from coa_parcels_percentage
-union all 
-select * from commercial_percentage
-union all
-select * from residential_percentage
-
-select * from flood_percentages;
-
-
------county block group residential parcel analysis----------
-create or replace view cbg_commercial as 
-select count(a.gid), b.blkgrp as block_group, b.geom as geom from commercial_properties as a
-join coa_census_block_groups as b
-on st_intersects(a.geom, b.geom)
-group by block_group, b.geom;
-
-
------county block group residential parcel analysis----------
-create or replace view cbg_residential as 
-select count(a.gid), b.blkgrp as block_group, b.geom as geom 
-from residential_parcels as a
-join coa_census_block_groups as b
-on st_intersects(a.geom, b.geom)
-group by block_group, b.geom;
