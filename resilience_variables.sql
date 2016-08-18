@@ -1,5 +1,3 @@
--- Upload the required data for the analysis, census data outlines, property parcel dataset, building footprints fl1yr, fl5yr, debris_flow, wildfire
--- update the geom of each parcel 
 update property_parcels 
 set geom = st_makevalid(geom);
 
@@ -82,13 +80,13 @@ from property_parcels as b
 where a.pinnum = b.pinnum;
 
 update resilience_variables as a
-set year = b.year_built
-from year_built_commercial as b
+set year = b.year
+from year_commercial as b
 where a.pinnum = b.pinnum;
 
 update resilience_variables as a
-set year = b.year_built
-from year_built_residential as b
+set year = b.year
+from year_residential as b
 where a.pinnum = b.pinnum;
 
 --The creation of the exposure levels and adaptive capacity data table
@@ -290,7 +288,7 @@ and class != '180'
 then 'Med' 
 else 'High' 
 END) as exposure_levels,
-a.geom from parcels_fl1yr_vw as a
+a.geom from resilience_variables as a
 where 
 class = '100' 
 or class < '200' 
@@ -301,12 +299,12 @@ or class = '635';
 create or replace view fl1yr_adcap as 
 select a.pinnum, 
 (case 
-when a.year_built < 1981 and sum < 120000 then 'Low'
-when a.year_built < 1981 and sum > 120000 then 'Med'
-when a.year_built > 1981 and sum < 120000 then 'Med'
-when a.year_built > 1981 and sum > 120000 then 'High' 
+when a.year < 1981 and sum < 120000 then 'Low'
+when a.year < 1981 and sum > 120000 then 'Med'
+when a.year > 1981 and sum < 120000 then 'Med'
+when a.year > 1981 and sum > 120000 then 'High' 
 else null END) as adcap_levels,
-a.geom from parcels_fl1yr_vw as a;
+a.geom from resilience_variables as a;
 
 create or replace view fl1yr_vuln as 
 select a.pinnum, 
@@ -320,7 +318,7 @@ when exposure_levels = 'Med' and adcap_levels = 'Med' then '4'
 when exposure_levels = 'Med' and adcap_levels = 'Low' then '6'
 when exposure_levels = 'High' and adcap_levels = 'Med' then '6'
 when exposure_levels = 'High' and adcap_levels = 'Low' then '9'
-ELSE 'Not enough data' END) as vuln_levels, a.geom from parcels_fl1yr_vw as a;
+ELSE 'Not enough data' END) as vuln_levels, a.geom from resilience_variables as a;
 
 -----Parcels within the 500 year floodplain exposure, adaptive apacity and vulnerability metric------------------
 create or replace view fl5yr_exposure as 
@@ -335,7 +333,7 @@ and class != '180'
 then 'Med' 
 else 'High' 
 END) as exposure_levels,
-a.geom from parcels_fl5yr_vw as a
+a.geom from resilience_variables as a
 where 
 class = '100' 
 or class < '200' 
@@ -346,11 +344,11 @@ or class = '635';
 create or replace view fl5yr_adcap as 
 select a.pinnum, 
 (case 
-when a.year_built < 1981 and sum < 120000 then 'Low'
-when a.year_built < 1981 and sum > 120000 then 'Med'
-when a.year_built > 1981 and sum > 120000 then 'High' 
+when a.year < 1981 and sum < 120000 then 'Low'
+when a.year < 1981 and sum > 120000 then 'Med'
+when a.year > 1981 and sum > 120000 then 'High' 
 else null END) as adcap_levels,
-a.geom from parcels_fl5yr_vw as a;
+a.geom from resilience_variables as a;
 
 create or replace view fl5yr_vuln as 
 select a.pinnum, 
@@ -364,7 +362,7 @@ when exposure_levels = 'Med' and adcap_levels = 'High' then '6'
 when exposure_levels = 'High' and adcap_levels = 'Low' then '7'
 when exposure_levels = 'High' and adcap_levels = 'Med' then '8'
 when exposure_levels = 'High' and adcap_levels = 'High' then '9'
-ELSE 'Not enough data' END) as vuln_levels, a.geom from parcels_fl5yr_vw as a;
+ELSE 'Not enough data' END) as vuln_levels, a.geom from resilience_variables as a;
 
 
 -----Parcels within the landslided debris exposure, adaptive apacity and vulnerability metric------------------
@@ -381,7 +379,7 @@ and class != '180'
 then 'Med' 
 else 'High' 
 END) as exposure_levels,
-a.geom from parcels_ls_vw as a
+a.geom from resilience_variables as a
 where 
 class = '100' 
 or class < '200' 
@@ -392,11 +390,11 @@ or class = '416';
 create or replace view ls_adcap as 
 select a.pinnum, 
 (case 
-when a.year_built < 1981 and sum < 120000 then 'Low'
-when a.year_built < 1981 and sum > 120000 then 'Med'
-when a.year_built > 1981 and sum > 120000 then 'High' 
+when a.year < 1981 and sum < 120000 then 'Low'
+when a.year < 1981 and sum > 120000 then 'Med'
+when a.year > 1981 and sum > 120000 then 'High' 
 else null END) as adcap_levels,
-a.geom from parcels_ls_vw as a;
+a.geom from resilience_variables as a;
 
 create or replace view ls_vuln as 
 select a.pinnum, 
@@ -410,7 +408,10 @@ when exposure_levels = 'Med' and adcap_levels = 'High' then '6'
 when exposure_levels = 'High' and adcap_levels = 'Low' then '7'
 when exposure_levels = 'High' and adcap_levels = 'Med' then '8'
 when exposure_levels = 'High' and adcap_levels = 'High' then '9'
-ELSE 'Not enough data' END) as vuln_levels, a.geom from parcels_ls_vw as a;
+ELSE 'Not enough data' END) as vuln_levels, a.geom from resilience_variables as a;
+
+
+------------------------------adaptive capacity, vunlverability, and exposure update----
 
 update resilience_variables as a
 set exposure_levels1 = b.exposure_levels 
@@ -468,7 +469,7 @@ create or replace view property_centroid as
 select a.gid, a.pinnum, st_centroid(a.geom)::geometry(point,4326) as geom, a.landvalue as lv, a.buildingva as bv, a.appraisedv as ap 
 ,a.acreage,a.class from property_parcels as a
 
-create table census_parcel_vw as 
+create or replace view census_parcel_vw as 
 select b.gid, a.pinnum, b.tractce10, substring(b.geoid10,1,12) as blockgroup_geoid10, b.blockce10, 
 a.lv, a.bv, a.ap,
 a.acreage, a.class, b.geom
@@ -476,7 +477,7 @@ from property_centroid as a
 join nc_cblock as b 
 on st_intersects(a.geom, b.geom);
 
-create table census_parcels_averages as
+create or replace view census_parcels_averages as
 select gid, blockce10, 
 avg(lv) as average_land,
 avg(bv) as average_building, 
