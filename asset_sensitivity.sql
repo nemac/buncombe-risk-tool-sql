@@ -352,6 +352,15 @@ create or replace view historic_structures_ls_percentage as
 select asset_type, landslide, total, landslide/total::float * 100 as percentage from historic_structures_ls_total
 group by landslide,total,asset_type;
 
+----food analysis-------------
+create or replace view food_infrastructure_buncombe_vw as 
+select  b.pinnum, a.* from food_infrastructure_buncombe as a, resilience_variables as b 
+where a.address::text like concat('%', upper(b.address), '%');
+
+create or replace view food_snap_retailers_vw as
+select  b.pinnum, a.* from food_snap_retailers as a, resilience_variables as b 
+where a.address::text like concat('%', upper(b.address), '%');
+
 
 
 create or replace view landslide_summary_vw as 
