@@ -89,6 +89,128 @@ set year = b.year
 from year_residential as b
 where a.pinnum = b.pinnum;
 
+
+
+
+
+------------------------------Start of census information to determine exposure-------------------------------------------------------
+--select substring(geoid10,1,12) as blockgroup_geoid from nc_cblock
+
+--drop view if exists property_centroid cascade; 
+
+create or replace view property_centroid as
+select a.gid, a.pinnum, st_centroid(a.geom)::geometry(point,4326) as geom, a.landvalue as lv, a.buildingva as bv, a.appraisedv as ap 
+,a.acreage,a.class from property_parcels as a
+
+create or replace view census_parcel_vw as 
+select b.gid, a.pinnum, b.tractce10, substring(b.geoid10,1,12) as blockgroup_geoid10, b.blockce10, 
+a.lv, a.bv, a.ap,
+a.acreage, a.class, b.geom
+from property_centroid as a 
+join nc_cblock as b 
+on st_intersects(a.geom, b.geom);
+
+create or replace view census_parcels_averages as
+select gid, blockce10, 
+avg(lv) as average_land,
+avg(bv) as average_building, 
+avg(ap) as average_total, 
+sum(acreage) as acreage, geom
+from census_parcel 
+group by gid, blockce10, geom;
+
+update resilience_variables as a
+set blockce10 = b.blockce10
+from census_parcel_vw as b
+where a.pinnum = b.pinnum;
+
+update resilience_variables as a
+set blockgroup_geoid10 = b.blockgroup_geoid10
+from census_parcel_vw as b
+where a.pinnum = b.pinnum;
+
+update resilience_variables as a
+set tractce = b.tractce10
+from census_parcel_vw as b
+where a.pinnum = b.pinnum; 
+
+create or replace view parcel_type_vw as
+select gid, pinnum, (CASE WHEN class >= '100' AND class < '200' THEN 'Residential'
+WHEN class = '411' THEN 'Residential'
+WHEN class = '416' THEN 'Residential'
+WHEN class = '635' THEN 'Residential'
+WHEN class = '250' THEN 'Biltmore Estate'
+WHEN class >= '300' AND class < '400' THEN 'Vacant Land'
+WHEN class >= '400' AND class < '411' THEN 'Commercial'
+WHEN class >= '412' AND class < '416' THEN 'Commercial'
+WHEN class >= '417' AND class < '500' THEN 'Commercial'
+WHEN class >= '500' AND class < '600' THEN 'Recreation'
+WHEN class >= '600' AND class < '635' THEN 'Community Services'
+WHEN class >= '636' AND class < '700' THEN 'Community Services'
+WHEN class >= '700' AND class < '800' THEN 'Industrial'
+WHEN class >= '800' AND class < '900' THEN 'State Assessed/Utilities'
+WHEN class >= '900' AND class < '1000' THEN 'Conserved Area/Park'
+ELSE 'Unclassified' END) as type, geom
+from property_parcels;
+
+update resilience_variables as a
+set parcel_type = b.type
+from parcel_type_vw as b
+where a.pinnum = b.pinnum;
+
+create or replace view ownership_vw as 
+select gid, pinnum,
+(CASE
+ WHEN ((((property_parcels.housenumbe::text || ' '::text) || property_parcels.streetname::text) || ' '::text) || property_parcels.streettype::text) = property_parcels.address::text THEN 'owner_residence'::text
+ WHEN property_parcels.state::text <> 'NC'::text THEN 'out_of_state'::text
+ WHEN property_parcels.zipcode::text = ANY ('{28806,28804,28801,28778,28748,28715,28803,28704,28732,28730,28711,28709,28787,28805,28701}'::text[]) THEN 'in_county'::text
+ ELSE 'in_state'::text
+ END) AS ownership, 
+ geom
+from property_parcels
+
+create or replace view ownership_residential as 
+select gid, pinnum, class,
+(CASE
+ WHEN ((((property_parcels.housenumbe::text || ' '::text) || property_parcels.streetname::text) || ' '::text) || property_parcels.streettype::text) = property_parcels.address::text THEN 'owner_residence'::text
+ WHEN property_parcels.state::text <> 'NC'::text THEN 'out_of_state'::text
+ WHEN property_parcels.zipcode::text = ANY ('{28806,28804,28801,28778,28748,28715,28803,28704,28732,28730,28711,28709,28787,28805,28701}'::text[]) THEN 'in_county'::text
+ ELSE 'in_state'::text
+ END) AS ownership, 
+ geom
+from property_parcels
+where
+class >= '100' and class < '200' 
+or class = '416' 
+or class = '411'
+or class = '635';
+
+
+update resilience_variables as a
+set ownership_vw = b.ownership
+from ownership as b
+where a.pinnum = b.pinnum;
+
+create or replace view landval_nrm as
+select a.pinnum, (case when landvalue = null or acreage = 0 then null 
+	else a.landvalue / a.acreage end) as landval_nrm 
+	from property_parcels as a
+
+create or replace view bldvalue_nrm as 
+select a.pinnum, (case when buildingva = null or sqft = 0 then null
+	else a.buildingva / a.sqft end) as bldvalue_nrm
+	from building_val_sqft
+
+update resilience_variables as a
+set landval_nrm = b.landval_nrm
+from landval_nrm as b
+where a.pinnum = b.pinnum;
+
+update resilience_variables as a
+set bldvalue_nrm = b.bldvalue_nrm 
+from bldvalue_nrm as b
+where a.pinnum = b.pinnum;
+
 --The creation of the exposure levels and adaptive capacity data table
 --This process includes creating the tables intersecting of parcels and features within the 100 and 500 year floodplain
 --When the intersection is being ran it pulls out the pinnum geometry building class and building values
@@ -145,7 +267,9 @@ join wildfire as b on st_intersects(a.geom,b.geom)
 group by a.pinnum, a.geom, a.class;
 
 
-CREATE or replace view build_fl1yr_vw AS
+-----these queries create tables because it takes to long to run update queries from views-----
+
+CREATE table build_fl1yr_vw AS
 SELECT a.pinnum, a.geom
 from building_pinnum_vw as a 
 join fl1yr as b on st_intersects(a.geom,b.geom)
@@ -153,7 +277,7 @@ group by a.pinnum, a.geom;
 --****2275472 ms to run****--
 --^^Intersect the building footprints to the 100 year floodplain^^-----
 
-CREATE or replace view build_fl5yr_vw AS
+CREATE table build_fl5yr_vw AS
 SELECT a.pinnum as pinnum, a.geom
 from building_pinnum_vw as a 
 join fl5yr as b on st_intersects(a.geom,b.geom)
@@ -161,13 +285,13 @@ group by a.pinnum, a.geom;
 --****>7000000****-----
 ---^^Intersect the building footprints to the 500 year floodplain^^-------
 
-CREATE or replace view build_ls_vw AS
+CREATE table build_ls_vw AS
 SELECT a.pinnum as pinnum, a.geom
 from building_pinnum_vw as a 
 join debris_flow as b on st_intersects(a.geom,b.geom)
 group by a.pinnum, a.geom;
 
-create or replace view build_wf_vw as 
+create table build_wf_vw as 
 SELECT a.pinnum as pinnum, a.geom
 from building_pinnum_vw as a 
 join wildfire as b on st_intersects(a.geom,b.geom)
@@ -457,123 +581,3 @@ update resilience_variables as a
 set vuln_levels_ls = b.vuln_levels
 from parcels_ls_vw as b
 where a.pinnum = b.pinnum; 
-
-
-
-------------------------------Start of census information to determine exposure-------------------------------------------------------
---select substring(geoid10,1,12) as blockgroup_geoid from nc_cblock
-
---drop view if exists property_centroid cascade; 
-
-create or replace view property_centroid as
-select a.gid, a.pinnum, st_centroid(a.geom)::geometry(point,4326) as geom, a.landvalue as lv, a.buildingva as bv, a.appraisedv as ap 
-,a.acreage,a.class from property_parcels as a
-
-create or replace view census_parcel_vw as 
-select b.gid, a.pinnum, b.tractce10, substring(b.geoid10,1,12) as blockgroup_geoid10, b.blockce10, 
-a.lv, a.bv, a.ap,
-a.acreage, a.class, b.geom
-from property_centroid as a 
-join nc_cblock as b 
-on st_intersects(a.geom, b.geom);
-
-create or replace view census_parcels_averages as
-select gid, blockce10, 
-avg(lv) as average_land,
-avg(bv) as average_building, 
-avg(ap) as average_total, 
-sum(acreage) as acreage, geom
-from census_parcel 
-group by gid, blockce10, geom;
-
-update resilience_variables as a
-set blockce10 = b.blockce10
-from census_parcel_vw as b
-where a.pinnum = b.pinnum;
-
-update resilience_variables as a
-set blockgroup_geoid10 = b.blockgroup_geoid10
-from census_parcel_vw as b
-where a.pinnum = b.pinnum;
-
-update resilience_variables as a
-set tractce = b.tractce10
-from census_parcel_vw as b
-where a.pinnum = b.pinnum; 
-
-create or replace view parcel_type_vw as
-select gid, pinnum, (CASE WHEN class >= '100' AND class < '200' THEN 'Residential'
-WHEN class = '411' THEN 'Residential'
-WHEN class = '416' THEN 'Residential'
-WHEN class = '635' THEN 'Residential'
-WHEN class = '250' THEN 'Biltmore Estate'
-WHEN class >= '300' AND class < '400' THEN 'Vacant Land'
-WHEN class >= '400' AND class < '411' THEN 'Commercial'
-WHEN class >= '412' AND class < '416' THEN 'Commercial'
-WHEN class >= '417' AND class < '500' THEN 'Commercial'
-WHEN class >= '500' AND class < '600' THEN 'Recreation'
-WHEN class >= '600' AND class < '635' THEN 'Community Services'
-WHEN class >= '636' AND class < '700' THEN 'Community Services'
-WHEN class >= '700' AND class < '800' THEN 'Industrial'
-WHEN class >= '800' AND class < '900' THEN 'State Assessed/Utilities'
-WHEN class >= '900' AND class < '1000' THEN 'Conserved Area/Park'
-ELSE 'Unclassified' END) as type, geom
-from property_parcels;
-
-update resilience_variables as a
-set parcel_type = b.type
-from parcel_type_vw as b
-where a.pinnum = b.pinnum;
-
-create or replace view ownership_vw as 
-select gid, pinnum,
-(CASE
- WHEN ((((property_parcels.housenumbe::text || ' '::text) || property_parcels.streetname::text) || ' '::text) || property_parcels.streettype::text) = property_parcels.address::text THEN 'owner_residence'::text
- WHEN property_parcels.state::text <> 'NC'::text THEN 'out_of_state'::text
- WHEN property_parcels.zipcode::text = ANY ('{28806,28804,28801,28778,28748,28715,28803,28704,28732,28730,28711,28709,28787,28805,28701}'::text[]) THEN 'in_county'::text
- ELSE 'in_state'::text
- END) AS ownership, 
- geom
-from property_parcels
-
-create or replace view ownership_residential as 
-select gid, pinnum, class,
-(CASE
- WHEN ((((property_parcels.housenumbe::text || ' '::text) || property_parcels.streetname::text) || ' '::text) || property_parcels.streettype::text) = property_parcels.address::text THEN 'owner_residence'::text
- WHEN property_parcels.state::text <> 'NC'::text THEN 'out_of_state'::text
- WHEN property_parcels.zipcode::text = ANY ('{28806,28804,28801,28778,28748,28715,28803,28704,28732,28730,28711,28709,28787,28805,28701}'::text[]) THEN 'in_county'::text
- ELSE 'in_state'::text
- END) AS ownership, 
- geom
-from property_parcels
-where
-class >= '100' and class < '200' 
-or class = '416' 
-or class = '411'
-or class = '635';
-
-
-update resilience_variables as a
-set ownership_vw = b.ownership
-from ownership as b
-where a.pinnum = b.pinnum;
-
-create or replace view landval_nrm as
-select a.pinnum, (case when landvalue = null or acreage = 0 then null 
-	else a.landvalue / a.acreage end) as landval_nrm 
-	from property_parcels as a
-
-create or replace view bldvalue_nrm as 
-select a.pinnum, (case when buildingva = null or sqft = 0 then null
-	else a.buildingva / a.sqft end) as bldvalue_nrm
-	from building_val_sqft
-
-update resilience_variables as a
-set landval_nrm = b.landval_nrm
-from landval_nrm as b
-where a.pinnum = b.pinnum;
-
-update resilience_variables as a
-set bldvalue_nrm = b.bldvalue_nrm 
-from bldvalue_nrm as b
-where a.pinnum = b.pinnum;
