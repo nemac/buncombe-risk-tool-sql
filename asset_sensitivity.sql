@@ -159,7 +159,6 @@ where a.pinnum = b.pinnum;
 -- drop view water_resources_vw cascade;
 -- drop view historic_structures_all_vw cascade;
 
---------------------------------communications---------------------------------
 create or replace view communications_vw as 
 select * from resilience_variables where asset_type = 'Communications';
 
@@ -504,18 +503,14 @@ group by wildfire,total,asset_type;
 
 --flood--
 
-create or replace view city_parks_vw as 
-select * from resilience_variables where asset_type = 'City Parks' ;
-
 create or replace view city_parks_fld_vw as 
-select * from resilience_variables where asset_type = 'City Parks' 
-and par_fl5yr_yn = 'yes';
+select * from coa_parks where fl5yr_exp = 'yes';
 
 create or replace view city_parks_flooded_total as
 select
 (select asset_type from resilience_variables where asset_type = 'City Parks' limit 1),
-(select count(pinnum) from city_parks_fld_vw) as flooded,
-(select count(pinnum) from city_parks_vw) as total;
+(select count(gid) from city_parks_fld_vw) as flooded,
+(select count(gid) from coa_parks) as total;
 
 create or replace view city_parks_fld_percentage as 
 select asset_type, flooded, total, flooded/total::float * 100 as percentage from city_parks_flooded_total
@@ -526,14 +521,13 @@ group by flooded,total,asset_type;
 
 
 create or replace view city_parks_ls_vw as 
-select * from resilience_variables where asset_type = 'City Parks' 
-and par_ls_yn = 'yes';
+select * from coa_parks where ls_exp = 'yes';
 
 create or replace view city_parks_ls_total as
 select
 (select asset_type from resilience_variables where asset_type = 'City Parks' limit 1),
-(select count(pinnum) from city_parks_ls_vw) as landslide,
-(select count(pinnum) from city_parks_vw) as total;
+(select count(gid) from city_parks_ls_vw) as landslide,
+(select count(gid) from coa_parks) as total;
 
 create or replace view city_parks_ls_percentage as 
 select asset_type, landslide, total, landslide/total::float * 100 as percentage from city_parks_ls_total
@@ -543,14 +537,13 @@ group by landslide,total,asset_type;
 --wildfire-----
 
 create or replace view city_parks_wf_vw as 
-select * from resilience_variables where asset_type = 'City Parks' 
-and par_wf_yn = 'yes';
+select * from coa_parks where wf_exp = 'yes';
 
 create or replace view city_parks_wf_total as
 select
 (select asset_type from resilience_variables where asset_type = 'City Parks' limit 1),
-(select count(pinnum) from city_parks_wf_vw) as wildfire,
-(select count(pinnum) from city_parks_vw) as total;
+(select count(gid) from city_parks_wf_vw) as wildfire,
+(select count(gid) from coa_parks) as total;
 
 create or replace view city_parks_wf_percentage as 
 select asset_type, wildfire, total, wildfire/total::float * 100 as percentage from city_parks_wf_total
@@ -780,7 +773,7 @@ select
 (select count(pinnum) from parking_vw) as total;
 
 create or replace view parking_wf_percentage as 
-select asset_type, landslide, total, landslide/total::float * 100 as percentage from communications_wf_total
+select asset_type, landslide, total, landslide/total::float * 100 as percentage from parking_wf_total
 group by landslide,total ,asset_type;
 
 
@@ -856,6 +849,7 @@ union all
 select * from waste_wf_percentage
 union all 
 select * from parking_wf_percentage;
+
 
 
 
