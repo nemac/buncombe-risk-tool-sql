@@ -851,6 +851,4 @@ union all
 select * from parking_wf_percentage;
 
 
-
-
 select * from flood_summary_vw;  
