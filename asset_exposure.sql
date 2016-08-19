@@ -581,3 +581,89 @@ update resilience_variables as a
 set vuln_levels_ls = b.vuln_levels
 from parcels_ls_vw as b
 where a.pinnum = b.pinnum; 
+
+
+---------------------------start of non parcel exposure analysis---------------------
+
+-------COA parks-------------------------
+
+alter table coa_parks
+add column fl1yr_exp text,
+add column fl5yr_exp text,
+add column ls_exp text,
+add column wf_exp text;
+
+---------------100 year flood exposure-----
+
+create or replace view coa_parks_fl1yr_vw as 
+SELECT a.gid as gid, b.geom 
+from coa_parks as a 
+join fl1yr as b on st_intersects(a.geom,b.geom)
+group by a.gid, b.geom;
+
+create or replace view coa_parks_fl1yr_yn_vw as 
+select a.gid, (case when a.gid = b.gid then 'yes' else 
+null end) as yes_no from coa_parks_fl1yr_vw as a, coa_parks as b 
+where a.gid= b.gid;
+
+
+update coa_parks as a
+set fl1yr_exp = b.yes_no
+from coa_parks_fl1yr_yn_vw as b
+where a.gid = b.gid; 
+
+---------------500 year flood exposure-----
+
+create or replace view coa_parks_fl5yr_vw as 
+SELECT a.gid as gid, b.geom 
+from coa_parks as a 
+join fl5yr as b on st_intersects(a.geom,b.geom)
+group by a.gid, b.geom;
+
+create or replace view coa_parks_fl5yr_yn_vw as 
+select a.gid, (case when a.gid = b.gid then 'yes' else 
+null end) as yes_no from coa_parks_fl5yr_vw as a, coa_parks as b 
+where a.gid= b.gid;
+
+update coa_parks as a
+set fl5yr_exp = b.yes_no
+from coa_parks_fl5yr_yn_vw as b
+where a.gid = b.gid; 
+
+
+---------------landslide debris flow exposure-----
+
+create or replace view coa_parks_ls_vw as 
+SELECT a.gid as gid, b.geom 
+from coa_parks as a 
+join debris_flow as b on st_intersects(a.geom,b.geom)
+group by a.gid, b.geom;.
+
+create or replace view coa_parks_ls_yn_vw as 
+select a.gid, (case when a.gid = b.gid then 'yes' else 
+null end) as yes_no from coa_parks_ls_vw as a, coa_parks as b 
+where a.gid= b.gid;
+
+update coa_parks as a
+set ls_exp = b.yes_no
+from coa_parks_ls_yn_vw as b
+where a.gid = b.gid; 
+
+---------------wildfire exposure-----
+
+
+create or replace view coa_parks_wf_vw as 
+SELECT a.gid as gid, b.geom 
+from coa_parks as a 
+join wildfire as b on st_intersects(a.geom,b.geom)
+group by a.gid, b.geom;
+
+create or replace view coa_parks_wf_yn_vw as 
+select a.gid, (case when a.gid = b.gid then 'yes' else 
+null end) as yes_no from coa_parks_wf_vw as a, coa_parks as b 
+where a.gid= b.gid;
+
+update coa_parks as a
+set wf_exp = b.yes_no
+from coa_parks_wf_yn_vw as b
+where a.gid = b.gid; 
