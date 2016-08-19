@@ -419,7 +419,7 @@ create or replace view emergency_services_ls_total as
 select
 (select asset_type from resilience_variables where asset_type = 'Emerg Services' limit 1),
 (select count(pinnum) from emergency_services_ls_vw) as landslide,
-(select count(pinnum) from energy_vw) as total;
+(select count(pinnum) from emergency_services_vw) as total;
 
 create or replace view emergency_services_ls_percentage as 
 select asset_type, landslide, total, landslide/total::float * 100 as percentage from emergency_services_ls_total
@@ -436,7 +436,7 @@ create or replace view emergency_services_wf_total as
 select
 (select asset_type from resilience_variables where asset_type = 'Emerg Services' limit 1),
 (select count(pinnum) from emergency_services_wf_vw) as wildfire,
-(select count(pinnum) from energy_vw) as total;
+(select count(pinnum) from emergency_services_vw) as total;
 
 create or replace view emergency_services_wf_percentage as 
 select asset_type, wildfire, total, wildfire/total::float * 100 as percentage from emergency_services_wf_total
