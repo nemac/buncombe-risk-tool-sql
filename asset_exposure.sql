@@ -172,44 +172,27 @@ select gid, pinnum,
  ELSE 'in_state'::text
  END) AS ownership, 
  geom
-from property_parcels
-
-create or replace view ownership_residential as 
-select gid, pinnum, class,
-(CASE
- WHEN ((((property_parcels.housenumbe::text || ' '::text) || property_parcels.streetname::text) || ' '::text) || property_parcels.streettype::text) = property_parcels.address::text THEN 'owner_residence'::text
- WHEN property_parcels.state::text <> 'NC'::text THEN 'out_of_state'::text
- WHEN property_parcels.zipcode::text = ANY ('{28806,28804,28801,28778,28748,28715,28803,28704,28732,28730,28711,28709,28787,28805,28701}'::text[]) THEN 'in_county'::text
- ELSE 'in_state'::text
- END) AS ownership, 
- geom
-from property_parcels
-where
-class >= '100' and class < '200' 
-or class = '416' 
-or class = '411'
-or class = '635';
-
+from property_parcels;
 
 update resilience_variables as a
-set ownership_vw = b.ownership
-from ownership as b
+set  ownership = b.ownership
+from ownership_vw as b
 where a.pinnum = b.pinnum;
 
 create or replace view landval_nrm as
 select a.pinnum, (case when landvalue = null or acreage = 0 then null 
 	else a.landvalue / a.acreage end) as landval_nrm 
-	from property_parcels as a
-
-create or replace view bldvalue_nrm as 
-select a.pinnum, (case when buildingva = null or sqft = 0 then null
-	else a.buildingva / a.sqft end) as bldvalue_nrm
-	from building_val_sqft
+	from property_parcels as a;
 
 update resilience_variables as a
 set landval_nrm = b.landval_nrm
 from landval_nrm as b
 where a.pinnum = b.pinnum;
+
+create or replace view bldvalue_nrm as 
+select a.pinnum, (case when buildingva = null or sqft = 0 then null
+	else a.buildingva / a.sqft end) as bldvalue_nrm
+	from building_val_sqft
 
 update resilience_variables as a
 set bldvalue_nrm = b.bldvalue_nrm 
