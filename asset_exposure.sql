@@ -64,6 +64,11 @@ set taxvalue = b.taxvalue
 from property_parcels as b
 where a.pinnum = b.pinnum;
 
+update resilience_variables as a 
+set buildingva = b.buildingva
+from property_parcels  as b
+where a.pinnum = b.pinnum
+
 update resilience_variables as a
 set acreage = b.acreage 
 from property_parcels as b
