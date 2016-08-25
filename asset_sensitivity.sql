@@ -856,7 +856,22 @@ from roads_ls_total
 group by ls_miles, total_miles; 
 
 
+-------------------------------dams--------------
 
+create or replace view dams_fld as 
+select a.* from dams as a 
+join fl5yr as b
+on st_intersects(a.geom,st_buffer(b.geom, .0001));
+
+create or replace view dams_ls as 
+select a.* from dams as a 
+join debris_flow as b
+on st_intersects(a.geom,st_buffer(b.geom, .0001));
+
+create or replace view dams_wf as 
+select a.* from dams as a 
+join wildfire as b
+on st_intersects(a.geom,st_buffer(b.geom, .0001));
 
 --------------------------------begin the summaries from each of the asset analysis-----------------------------
 
