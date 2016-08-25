@@ -778,6 +778,86 @@ group by landslide,total ,asset_type;
 
 
 
+-----------------greenways------------
+
+--flood
+create or replace view greenways_fld as 
+select a.* from greenways as a 
+join fl5yr as b 
+on st_intersects(a.geom, b.geom)
+group by a.gid;
+
+create or replace view greenways_fld_total as
+select 
+(select sum(st_length(geom::geography)) * .0006 from greenways_fld) as flooded_miles,
+(select sum(st_length(geom::geography))* .0006 from greenways) as total_miles;
+
+create or replace view greenways_fld_percentage as 
+select flooded_miles, total_miles, flooded_miles/total_miles * 100 as percentage 
+from greenways_fld_total 
+group by flooded_miles, total_miles; 
+
+
+---landslide
+
+create or replace view greenways_ls as 
+select a.* from greenways as a 
+join debris_flow as b 
+on st_intersects(a.geom, b.geom);
+
+create or replace view greenways_ls_total as
+select 
+(select sum(st_length(geom::geography)) * .0006 from greenways_ls) as ls_miles,
+(select sum(st_length(geom::geography))* .0006 from greenways) as total_miles;
+
+create or replace view greenways_ls_percentage as 
+select ls_miles, total_miles, ls_miles/total_miles * 100 as percentage 
+from greenways_ls_total 
+group by ls_miles, total_miles; 
+
+
+
+---------------------------------------roads-------------------
+--flood
+
+create or replace view roads_fld as 
+select a.* from roads_coa as a 
+join fl5yr as b 
+on st_intersects(a.geom, b.geom)
+group by a.gid;
+
+create or replace view roads_fld_total as
+select 
+(select sum(st_length(geom::geography)) * .0006 from roads_fld) as flooded_miles,
+(select sum(st_length(geom::geography))* .0006 from roads_coa) as total_miles;
+
+create or replace view roads_fld_percentage as 
+select flooded_miles, total_miles, flooded_miles/total_miles * 100 as percentage 
+from roads_fld_total 
+group by flooded_miles, total_miles; 
+
+
+--landslide
+
+
+create or replace view roads_ls as 
+select a.* from roads_coa as a 
+join debris_flow as b 
+on st_intersects(a.geom, b.geom);
+
+create or replace view roads_ls_total as
+select 
+(select sum(st_length(geom::geography)) * .0006 from roads_ls) as ls_miles,
+(select sum(st_length(geom::geography))* .0006 from roads_coa) as total_miles;
+
+create or replace view roads_ls_percentage as 
+select ls_miles, total_miles, ls_miles/total_miles * 100 as percentage 
+from roads_ls_total 
+group by ls_miles, total_miles; 
+
+
+
+
 --------------------------------begin the summaries from each of the asset analysis-----------------------------
 
 
