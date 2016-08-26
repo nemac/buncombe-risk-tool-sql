@@ -937,5 +937,13 @@ select * from parking_wf_percentage;
 select * from flood_summary_vw;  
 
 -------------being census summaries-------------------
+create table resilience_variables_bunc as 
+select * from resilience_variables;
+
+create or replace view resilience_variables_cbg as 
 select a.* from resilience_variables as a, coa_census_block_groups as b
-where a.blockgroup_geoid10 = substring(b.geo_id, 10, 21) 
+where a.blockgroup_geoid10 = substring(b.geo_id, 10, 21);
+
+delete from resilience_variables as a 
+where a.pinnum not in (select b.pinnum from resilience_variables_cbg as b)
+
