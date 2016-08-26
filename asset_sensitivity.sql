@@ -934,5 +934,8 @@ select * from waste_wf_percentage
 union all 
 select * from parking_wf_percentage;
 
-
 select * from flood_summary_vw;  
+
+-------------being census summaries-------------------
+select a.* from resilience_variables as a, coa_census_block_groups as b
+where a.blockgroup_geoid10 = substring(b.geo_id, 10, 21) 
