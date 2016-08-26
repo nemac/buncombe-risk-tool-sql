@@ -94,10 +94,6 @@ from food_infrastructure_vw_defintion as b
 where a.pinnum = b.pinnum;
  
 
-------dam asset defintion-------
-
-
-
 ----parcel type asset defintion-------------
 
 create or replace view asset_type as 
