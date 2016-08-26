@@ -814,8 +814,9 @@ select ls_miles, total_miles, ls_miles/total_miles * 100 as percentage
 from greenways_ls_total 
 group by ls_miles, total_miles; 
 
-
-create or replace view roads_fld_tb as 
+----------------------------------roads-----------------------------------------------
+--------------flood-----------
+create table roads_fld_tb as 
 select a.* from roads_coa as a 
 join fl5yr as b 
 on st_intersects(a.geom, b.geom)
@@ -835,7 +836,7 @@ group by flooded_miles, total_miles;
 --landslide
 
 
-create or replace view roads_ls_tb as 
+create table roads_ls_tb as 
 select a.* from roads_coa as a 
 join debris_flow as b 
 on st_intersects(a.geom, b.geom);
@@ -850,24 +851,17 @@ select ls_miles, total_miles, ls_miles/total_miles * 100 as percentage
 from roads_ls_total 
 group by ls_miles, total_miles; 
 
-
--------------------------------dams--------------
-
-create or replace view dams_fld as 
+---------------------dams
+--------------flood------------
+create table dams_fld_tb as 
 select a.* from dams as a 
 join fl5yr as b
 on st_intersects(a.geom,st_buffer(b.geom, .0001));
-
-create or replace view dams_ls as 
+------------landslide----------------
+create table dams_ls_tb as 
 select a.* from dams as a 
 join debris_flow as b
 on st_intersects(a.geom,st_buffer(b.geom, .0001));
-
-create or replace view dams_wf as 
-select a.* from dams as a 
-join wildfire as b
-on st_intersects(a.geom,st_buffer(b.geom, .0001));
-
 --------------------------------begin the summaries from each of the asset analysis-----------------------------
 
 
