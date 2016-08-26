@@ -815,12 +815,30 @@ from greenways_ls_total
 group by ls_miles, total_miles; 
 
 ----------------------------------roads-----------------------------------------------
+
+create table roads_coa_2dgeom as 
+select st_force_2d(geom)::geometry(MultiLineString, 4326) as geom from roads_coa
+
+alter table roads_coa 
+drop column geom cascade;
+
+alter table roads_coa 
+add column geom geometry(MultiLineString, 4326)
+
+update roads_coa as a 
+set geom = b.geom
+from roads_coa as b 
+where a.gid = b.gid;
+
 --------------flood-----------
+
 create table roads_fld_tb as 
-select a.* from roads_coa as a 
+select a.* from roads_coa_2dgeom as a 
 join fl5yr as b 
 on st_intersects(a.geom, b.geom)
-group by a.gid;
+group by a.gid, a.geom;
+
+select st_makepolygon(st_linemerge(a.geom)) from roads_coa as a
 
 create or replace view roads_fld_total as
 select 
@@ -851,13 +869,13 @@ select ls_miles, total_miles, ls_miles/total_miles * 100 as percentage
 from roads_ls_total 
 group by ls_miles, total_miles; 
 
----------------------dams
---------------flood------------
+-----dams---
+
 create table dams_fld_tb as 
 select a.* from dams as a 
 join fl5yr as b
 on st_intersects(a.geom,st_buffer(b.geom, .0001));
-------------landslide----------------
+
 create table dams_ls_tb as 
 select a.* from dams as a 
 join debris_flow as b
