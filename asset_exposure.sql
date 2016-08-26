@@ -85,13 +85,15 @@ from property_parcels as b
 where a.pinnum = b.pinnum;
 
 update resilience_variables as a
-set year = b.year
-from year_commercial as b
+set year = (select min(year)
+from year_built_commercial)
+from year_built_commercial as b
 where a.pinnum = b.pinnum;
 
 update resilience_variables as a
-set year = b.year
-from year_residential as b
+set year = (select min(year)
+from year_built_residential)
+from year_built_residential as b
 where a.pinnum = b.pinnum;
 
 
