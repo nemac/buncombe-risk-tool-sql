@@ -866,16 +866,19 @@ from roads_ls_total
 group by ls_miles, total_miles; 
 
 -----dams---
-
+--flood---
 create table dams_fld_tb as 
 select a.* from dams as a 
 join fl5yr as b
-on st_intersects(a.geom,st_buffer(b.geom, .0001));
+on st_intersects(a.geom,b.geom)
+group by a.gid, a.dam, a.lat, a.lon, a.geom;
 
+---landslide---
 create table dams_ls_tb as 
 select a.* from dams as a 
 join debris_flow as b
-on st_intersects(a.geom,st_buffer(b.geom, .0001));
+on st_intersects(a.geom,b.geom)
+group by a.gid, a.dam, a.lat, a.lon, a.geom;
 --------------------------------begin the summaries from each of the asset analysis-----------------------------
 
 
