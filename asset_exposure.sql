@@ -96,7 +96,11 @@ from year_built_residential)
 from year_built_residential as b
 where a.pinnum = b.pinnum;
 
-
+#this might be the right query, assuming the year_built table is the min for each pinnum
+update resilience_variables
+set year = year_built_residential.year
+from year_built_residential
+where resilience_variables.pinnum = year_built_residential.pinnum;
 
 
 
