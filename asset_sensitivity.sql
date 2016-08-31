@@ -200,6 +200,98 @@ create or replace view communications_wf_percentage as
 select asset_type, landslide, total, landslide/total::float * 100 as percentage from communications_wf_total
 group by landslide,total ,asset_type;
 
+------------------------------residential--------------------------------------
+
+CREATE OR REPLACE VIEW public.residential_fld_vw AS 
+ SELECT *
+        CASE
+            WHEN resilience_variables.bldg_fl5yr_yn = 'yes'::text AND (resilience_variables.class::text = '170'::text OR resilience_variables.class::text = '180'::text OR resilience_variables.class::text = '411'::text OR resilience_variables.class::text = '416'::text OR resilience_variables.class::text = '476'::text OR resilience_variables.class::text = '631'::text OR resilience_variables.class::text = '633'::text OR resilience_variables.class::text = '634'::text OR resilience_variables.class::text = '635'::text OR resilience_variables.class::text = '644'::text) THEN 'High'::text
+            WHEN resilience_variables.bldg_fl5yr_yn = 'yes'::text AND (resilience_variables.class::text = '100'::text OR resilience_variables.class::text = '105'::text OR resilience_variables.class::text = '120'::text OR resilience_variables.class::text = '121'::text OR resilience_variables.class::text = '122'::text) THEN 'Med'::text
+            ELSE 'Low'::text
+        END AS sensitivity,
+        CASE
+            WHEN resilience_variables.buildingva > 127500::numeric AND resilience_variables.year > 1980::numeric THEN 'High'::text
+            WHEN resilience_variables.buildingva <= 127500::numeric AND resilience_variables.year < 1981::numeric THEN 'Low'::text
+            ELSE 'Med'::text
+        END AS adapt_cap,
+    resilience_variables.landvalue,
+    resilience_variables.par_fldwy_yn,
+    resilience_variables.bldg_fldwy_yn
+   FROM resilience_variables
+  WHERE resilience_variables.asset_type = 'Residential'::text AND resilience_variables.par_fl5yr_yn = 'yes'::text;
+
+
+CREATE OR REPLACE VIEW public.residential_flooded_total AS 
+ SELECT ( SELECT resilience_variables.asset_type
+           FROM resilience_variables
+          WHERE resilience_variables.asset_type = 'Residential'::text
+         LIMIT 1) AS asset_type,
+    ( SELECT count(residential_fld_vw.pinnum) AS count
+           FROM residential_fld_vw) AS flooded,
+    ( SELECT count(residential_vw.pinnum) AS count
+           FROM residential_vw) AS total;
+
+
+CREATE OR REPLACE VIEW public.residential_fld_percentage AS 
+ SELECT residential_flooded_total.asset_type,
+    residential_flooded_total.flooded,
+    residential_flooded_total.total,
+    residential_flooded_total.flooded::double precision / residential_flooded_total.total::double precision * 100::double precision AS percentage
+   FROM residential_flooded_total
+  GROUP BY residential_flooded_total.flooded, residential_flooded_total.total, residential_flooded_total.asset_type;
+
+
+
+CREATE OR REPLACE VIEW public.residential_ls_vw AS 
+ SELECT *
+   FROM resilience_variables
+  WHERE resilience_variables.asset_type = 'Residential'::text AND resilience_variables.par_ls_yn = 'yes'::text;
+
+
+CREATE OR REPLACE VIEW public.residential_ls_total AS 
+ SELECT ( SELECT resilience_variables.asset_type
+           FROM resilience_variables
+          WHERE resilience_variables.asset_type = 'Residential'::text
+         LIMIT 1) AS asset_type,
+    ( SELECT count(residential_ls_vw.pinnum) AS count
+           FROM residential_ls_vw) AS landslide,
+    ( SELECT count(residential_vw.pinnum) AS count
+           FROM residential_vw) AS total;
+
+CREATE OR REPLACE VIEW public.residential_ls_percentage AS 
+ SELECT residential_ls_total.asset_type,
+    residential_ls_total.landslide,
+    residential_ls_total.total,
+    residential_ls_total.landslide::double precision / residential_ls_total.total::double precision * 100::double precision AS percentage
+   FROM residential_ls_total
+  GROUP BY residential_ls_total.landslide, residential_ls_total.total, residential_ls_total.asset_type;
+
+
+CREATE OR REPLACE VIEW public.residential_wf_vw AS 
+ SELECT *
+   FROM resilience_variables
+  WHERE resilience_variables.asset_type = 'Residential'::text AND resilience_variables.par_wf_yn = 'yes'::text;
+
+
+CREATE OR REPLACE VIEW public.residential_wf_total AS 
+ SELECT ( SELECT resilience_variables.asset_type
+           FROM resilience_variables
+          WHERE resilience_variables.asset_type = 'Residential'::text
+         LIMIT 1) AS asset_type,
+    ( SELECT count(residential_wf_vw.pinnum) AS count
+           FROM residential_wf_vw) AS wildfire,
+    ( SELECT count(residential_vw.pinnum) AS count
+           FROM residential_vw) AS total;
+
+
+  CREATE OR REPLACE VIEW public.residential_wf_percentage AS 
+ SELECT residential_wf_total.asset_type,
+    residential_wf_total.wildfire,
+    residential_wf_total.total,
+    residential_wf_total.wildfire::double precision / residential_wf_total.total::double precision * 100::double precision AS percentage
+   FROM residential_wf_total
+  GROUP BY residential_wf_total.wildfire, residential_wf_total.total, residential_wf_total.asset_type;
+
 
 
 ----------------------------commercial---------------------------------------------
