@@ -1089,6 +1089,25 @@ select * from parking_wf_percentage;
 
 select * from flood_summary_vw;  
 
+select 
+   blockgroup_geoid10 as blockgroup,
+   SUM (CASE WHEN sensitivity = 'Low' then 1 else 0 END ) as Sensitivity_Low,
+   SUM (CASE WHEN sensitivity = 'Med' then 1 else 0 END ) as Sensitivity_Medium,
+   SUM (CASE WHEN sensitivity = 'High' then 1 else 0 END ) as Sensitivity_High,
+   SUM (CASE WHEN adapt_cap = 'Low' then 1 else 0 END ) as AdaptCap_Low,
+   SUM (CASE WHEN adapt_cap = 'Med' then 1 else 0 END ) as AdaptCap_Medium,
+   SUM (CASE WHEN adapt_cap = 'High' then 1 else 0 END ) as AdaptCap_High,
+   SUM (CASE WHEN vuln_cat = 'Low' then 1 else 0 END ) as Vulnerability_Low,
+   SUM (CASE WHEN vuln_cat = 'Med' then 1 else 0 END ) as Vulnerability_Medium,
+   SUM (CASE WHEN vuln_cat = 'High' then 1 else 0 END ) as Vulnerability_High,
+   SUM (CASE WHEN risk_tot = 'Low' then 1 else 0 END ) as Risk_Low,
+   SUM (CASE WHEN risk_tot = 'Med' then 1 else 0 END ) as Risk_Medium,
+   SUM (CASE WHEN risk_tot = 'High' then 1 else 0 END ) as Risk_High, 
+   SUM(vuln_num) as Vulnerability_score,
+   SUM(risk_num) as Risk_score
+ from residential_fld_assessment_vw
+ group by blockgroup;
+
 -------------being census summaries-------------------
 create table resilience_variables_bunc as 
 select * from resilience_variables;
