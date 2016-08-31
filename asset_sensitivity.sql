@@ -948,12 +948,34 @@ join fl5yr as b
 on st_intersects(a.geom,b.geom)
 group by a.gid, a.dam, a.lat, a.lon, a.geom;
 
+
+create or replace view dams_flooded_total as
+select
+(select count(gid) from dams_fld_tb) as flooded,
+(select count(gid) from dams) as total;
+
+create or replace view dams_fld_percentage as 
+select flooded, total, flooded/total::float * 100 as percentage from dams_flooded_total
+group by flooded,total;
+
+
 ---landslide---
 create table dams_ls_tb as 
 select a.* from dams as a 
 join debris_flow as b
 on st_intersects(a.geom,b.geom)
 group by a.gid, a.dam, a.lat, a.lon, a.geom;
+
+
+create or replace view dams_ls_total as
+select
+(select count(gid) from dams_ls_tb) as landslide,
+(select count(gid) from dams) as total;
+
+create or replace view dams_ls_percentage as 
+select landslide, total, landslide/total::float * 100 as percentage from dams_ls_total
+group by landslide,total;
+
 --------------------------------begin the summaries from each of the asset analysis-----------------------------
 
 
