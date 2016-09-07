@@ -1117,5 +1117,31 @@ select a.* from resilience_variables as a, coa_census_block_groups as b
 where a.blockgroup_geoid10 = substring(b.geo_id, 10, 21);
 
 delete from resilience_variables as a 
-where a.pinnum not in (select b.pinnum from resilience_variables_cbg as b)
+where a.pinnum not in (select b.pinnum from resilience_variables_cbg as b);
+
+drop view stormwater_cbg if exists;
+
+create or replace view stormwater_cbg as 
+select  
+   SUM (CASE WHEN category = 'High Priority' then 1 else 0 END ) as High_Priority,
+   SUM (CASE WHEN category = 'High Consequence of Failure' then 1 else 0 END ) as High_Consequence,
+   SUM (CASE WHEN category = 'High Likelihood of Failure' then 1 else 0 END ) as High_Likelihood,
+   a.geo_id,
+   st_length(b.geom::geography) * .0006 as length,
+   a.geom
+from coa_census_block_groups as a
+join coa_stormwater_criticality as b
+on st_contains(a.geom, b.geom)
+group by a.geo_id, a.geom, b.geom;
+
+
+create or replace view stormwater_sum as 
+select a.geo_id, 
+sum(length),
+sum(high_priority) as priority, 
+sum(high_consequence) as consequence, 
+sum(high_likelihood) as likelihood,
+a.geom
+from stormwater_cbg as a
+group by a.geo_id, a.geom;
 
