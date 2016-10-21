@@ -31,3 +31,21 @@ on a.geo_id = b.geo_id
 where route_id is null
 group by a.geo_id, b.geom;
 
+
+CREATE OR REPLACE VIEW public.bus_routes_count_ls_cbg AS 
+ SELECT count(a.geom) AS count,
+    b.geom
+   FROM bus_routes_ls a
+     JOIN coa_census_block_groups b ON st_intersects(a.geom, b.geom)
+  WHERE a.route_id IS NULL
+  GROUP BY b.geom;
+
+
+CREATE OR REPLACE VIEW public.bus_routes_count_fld_cbg AS 
+ SELECT count(a.geom) AS count,
+    b.geom
+   FROM bus_routes_fld_500 a
+     JOIN coa_census_block_groups b ON st_intersects(a.geom, b.geom)
+  GROUP BY b.geom;
+
+
