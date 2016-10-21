@@ -1,51 +1,26 @@
+drop table bus_routs_poly_ls
 
-create or replace view bus_routes_count_ls_cbg as 
-select count(a.geom), a.geo_id, b.geom 
-from bus_routes_ls as a
-join coa_census_block_groups as b
-on a.geo_id = b.geo_id
-where route_id is null
-group by a.geo_id, b.geom;
+create table bus_routes_poly_ls as 
+select a.gid, a.geom from bus_routes_dissolve as a 
+join debris_flow as b
+on st_intersects(a.geom,b.geom);
 
-create or replace view bus_routes_count_fld_cbg as 
-select count(a.geom), a.geo_id, b.geom 
-from bus_routes_fld as a
-join coa_census_block_groups as b
-on a.geo_id = b.geo_id
-where route_id is null
-group by a.geo_id, b.geom;
-
-create or replace view bus_routes_fld_cbg as 
-select sum(st_length(a.geom::geography)) * .0006 as flooded_miles, a.geo_id, b.geom 
-from bus_routes_fld as a
-join coa_census_block_groups as b
-on a.geo_id = b.geo_id
-where route_id is null
-group by a.geo_id, b.geom;
+create table bus_routes_poly_fld as 
+select a.gid, a.geom from bus_routes_dissolve as a
+join fl5yr as b
+on st_intersects(a.geom,b.geom);
 
 create or replace view bus_routes_ls_cbg as 
-select sum(st_length(a.geom::geography)) * .0006 as flow_path_miles, a.geo_id, b.geom 
-from bus_routes_ls as a
+select (sum(st_length(a.geom::geography)) * .0006) /2 as flow_path_miles, b.geo_id, b.geom 
+from bus_routes_poly_ls as a
+join coa_census_block_groups as b
+on st_intersects(a.geom,b.geom)
+group by b.geo_id, b.geom;
+
+create or replace view bus_routes_ls_cbg as 
+select (sum(st_length(a.geom::geography)) * .0006) /2 as flow_path_miles, a.geo_id, b.geom 
+from bus_routes_poly_fld as a
 join coa_census_block_groups as b
 on a.geo_id = b.geo_id
 where route_id is null
 group by a.geo_id, b.geom;
-
-
-CREATE OR REPLACE VIEW public.bus_routes_count_ls_cbg AS 
- SELECT count(a.geom) AS count,
-    b.geom
-   FROM bus_routes_ls a
-     JOIN coa_census_block_groups b ON st_intersects(a.geom, b.geom)
-  WHERE a.route_id IS NULL
-  GROUP BY b.geom;
-
-
-CREATE OR REPLACE VIEW public.bus_routes_count_fld_cbg AS 
- SELECT count(a.geom) AS count,
-    b.geom
-   FROM bus_routes_fld_500 a
-     JOIN coa_census_block_groups b ON st_intersects(a.geom, b.geom)
-  GROUP BY b.geom;
-
-
